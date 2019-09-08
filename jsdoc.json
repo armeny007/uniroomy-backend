@@ -1,0 +1,22 @@
+{ 
+  "source": {
+  "include": ["./api" ],
+  "excludePattern": "(node_modules/|docs|app-bundle.js)"
+  },
+  "plugins": [
+    "plugins/markdown",
+    "jsdoc-mermaid",
+    "better-docs/category",
+    "better-docs/component",
+    "node_modules/jsdoc-typeof-plugin"
+  ],
+  "opts": {
+    "encoding": "utf8",
+    "destination": "docs/",
+    "readme": "./docs-src/home.md",
+    "recurse": true,
+    "verbose": true,
+    "tutorials": "./docs-src/tutorials",
+    "template": "better-docs"
+  }
+}

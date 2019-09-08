@@ -1,0 +1,26 @@
+{
+  "name": "uniroomy-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha ./spec",
+    "docs": "./node_modules/.bin/jsdoc -c ./jsdoc.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/armeny007/uniroomy-backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/armeny007/uniroomy-backend/issues"
+  },
+  "homepage": "https://github.com/armeny007/uniroomy-backend#readme",
+  "devDependencies": {
+    "jsdoc": "^3.6.3"
+  }
+}
