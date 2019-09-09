@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "directories": {
-    "doc": "doc"
+    "doc": "docs"
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha ./spec",
@@ -21,6 +21,8 @@
   },
   "homepage": "https://github.com/armeny007/uniroomy-backend#readme",
   "devDependencies": {
-    "jsdoc": "^3.6.3"
+    "better-docs": "^1.2.2",
+    "jsdoc": "^3.6.3",
+    "jsdoc-mermaid": "^1.0.0"
   }
 }

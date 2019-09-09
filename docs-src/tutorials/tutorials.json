@@ -1,0 +1,11 @@
+{
+  "01-database-schema": {
+    "title": "UniRoomy Database Schema"
+  },
+  "02-howtorun-instructions": {
+    "title": "How To Run Instructions"
+  },
+  "03-search-algorithm": {
+    "title": "Search Algorithm Description"
+  }
+}
