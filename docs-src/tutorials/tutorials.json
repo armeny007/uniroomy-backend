@@ -2,10 +2,10 @@
   "01-database-schema": {
     "title": "UniRoomy Database Schema"
   },
-  "02-howtorun-instructions": {
+  "03-howtorun-instructions": {
     "title": "How To Run Instructions"
   },
-  "03-search-algorithm": {
+  "04-search-algorithm": {
     "title": "Search Algorithm Description"
   }
 }
