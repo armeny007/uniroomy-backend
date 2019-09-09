@@ -14,4 +14,4 @@
 
 ## Visual UniRoomy GraphQL builder
 
-  <a href="https://uniroomy-backend.herokuapp.com/graphiql">https://umiroomy-backend.herokuapp.com/graphiql</a>
+  <a href="https://uniroomy-backend.herokuapp.com/graphiql" target="_blank">https://umiroomy-backend.herokuapp.com/graphiql</a>
