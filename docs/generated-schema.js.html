@@ -1,0 +1,834 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>JSDoc: generated-schema.js</title>
+
+    <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="./build/entry.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+</head>
+
+<body>
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">UniRoomy Backend API Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                 
+                <div class="navbar-menu">
+                    <div class="navbar-end">
+                    
+                        <div class="navbar-item">
+                            <a href="https://github.com/armeny007/uniroomy-backend" target="_blank">Github</a>
+                        </div>
+                    
+                        <div class="navbar-item">
+                            <a href="https://uniroomy-backend.herokuapp.com/graphiql" target="_blank">Live GraphQL demo</a>
+                        </div>
+                    
+                    </div>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-algorithm.html">Search Algorithm Description</a></li></ul><h3>Modules</h3><ul><li><a href="module-schema.html">schema</a></li><li><a href="module-server.html">server</a></li></ul></div>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Source</p>
+                        <h1>generated-schema.js</h1>
+                    </header>
+                    
+                    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module schema
+ * 
+ * @description
+ * Schema module describes query types and mutations of UniRoomy backend API
+ * 
+ */
+
+const {
+  GraphQLSchema,
+  GraphQLObjectType,
+  GraphQLString,
+  GraphQLInt,
+  GraphQLList,
+  GraphQLID,
+  GraphQLBoolean,
+  GraphQLFloat,
+} = require('graphql');
+
+const {
+  GraphQLDate,
+  GraphQLTime,
+  GraphQLDateTime
+} = require('graphql-iso-date');
+
+const UniversityType = new GraphQLObjectType({
+	name: 'University',
+	description: 'Represents university.',
+	fields: () => ({
+		id: { type: GraphQLID },
+		name: { type: GraphQLString },
+
+		persons: {
+			type: new GraphQLList(PersonType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const PersonType = new GraphQLObjectType({
+	name: 'Person',
+	description: 'Represents person. Contains common fields for different roles (student/landlord).',
+	fields: () => ({
+		id: { type: GraphQLID },
+		first_name: { type: GraphQLString },
+		last_name: { type: GraphQLString },
+		date_of_birth: { type: GraphQLDate },
+		email: { type: GraphQLString },
+		role_id: { type: GraphQLInt },
+		role: {
+			type: RoleType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		university_id: { type: GraphQLInt },
+		university: {
+			type: UniversityType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		isAdmin: { type: GraphQLBoolean },
+		created_at: { type: GraphQLDateTime },
+		updated_at: { type: GraphQLDateTime },
+
+		students: {
+			type: new GraphQLList(StudentType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		landlords: {
+			type: new GraphQLList(LandlordType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const RoleType = new GraphQLObjectType({
+	name: 'Role',
+	description: 'Represents UniRoomy person role. 1 - student, 2 - landlord',
+	fields: () => ({
+		id: { type: GraphQLID },
+		name: { type: GraphQLString },
+
+		persons: {
+			type: new GraphQLList(PersonType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const StudentType = new GraphQLObjectType({
+	name: 'Student',
+	fields: () => ({
+		id: { type: GraphQLID },
+		person: {
+			type: PersonType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		status: { type: GraphQLString },
+		verified: { type: GraphQLBoolean },
+		tokens: { type: GraphQLInt },
+
+		reviews: {
+			type: new GraphQLList(ReviewType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		studentAchievements: {
+			type: new GraphQLList(StudentAchievementType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const LandlordType = new GraphQLObjectType({
+	name: 'Landlord',
+	fields: () => ({
+		id: { type: GraphQLID },
+		person: {
+			type: PersonType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		type: { type: GraphQLString },
+		organisation_name: { type: GraphQLString },
+
+		houses: {
+			type: new GraphQLList(HouseType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const HouseType = new GraphQLObjectType({
+	name: 'House',
+	fields: () => ({
+		id: { type: GraphQLID },
+		landlord_id: { type: GraphQLInt },
+		landlord: {
+			type: LandlordType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		name: { type: GraphQLString },
+		description: { type: GraphQLString },
+		city: { type: GraphQLString },
+		street: { type: GraphQLString },
+		zip: { type: GraphQLString },
+		address: { type: GraphQLString },
+		bathes: { type: GraphQLInt },
+		rating: { type: GraphQLFloat },
+
+		badrooms: {
+			type: new GraphQLList(BadroomType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		reviewElementHouses: {
+			type: new GraphQLList(ReviewElementHouseType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const BadroomType = new GraphQLObjectType({
+	name: 'Badroom',
+	fields: () => ({
+		id: { type: GraphQLID },
+		house_id: { type: GraphQLInt },
+		house: {
+			type: HouseType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		name: { type: GraphQLString },
+		rent: { type: GraphQLInt },
+		beds: { type: GraphQLInt },
+		rating: { type: GraphQLFloat },
+
+		reviewElementBadrooms: {
+			type: new GraphQLList(ReviewElementBadroomType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const CategoryType = new GraphQLObjectType({
+	name: 'Category',
+	fields: () => ({
+		id: { type: GraphQLID },
+		name: { type: GraphQLString },
+
+		elements: {
+			type: new GraphQLList(ElementType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const ElementType = new GraphQLObjectType({
+	name: 'Element',
+	fields: () => ({
+		id: { type: GraphQLID },
+		preferences: {
+			type: PreferencesType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		name: { type: GraphQLString },
+		category_id: { type: GraphQLInt },
+		category: {
+			type: CategoryType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		type_id: { type: GraphQLInt },
+		elementType: {
+			type: ElementTypeType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+
+		reviewElementHouses: {
+			type: new GraphQLList(ReviewElementHouseType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		reviewElementBadrooms: {
+			type: new GraphQLList(ReviewElementBadroomType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const ElementTypeType = new GraphQLObjectType({
+	name: 'ElementType',
+	fields: () => ({
+		id: { type: GraphQLID },
+		name: { type: GraphQLString },
+		range_from: { type: GraphQLInt },
+		range_to: { type: GraphQLInt },
+
+		elements: {
+			type: new GraphQLList(ElementType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		elementTypeValuess: {
+			type: new GraphQLList(ElementTypeValuesType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const ElementTypeValuesType = new GraphQLObjectType({
+	name: 'ElementTypeValues',
+	fields: () => ({
+		id: { type: GraphQLID },
+		element_type_id: { type: GraphQLInt },
+		elementType: {
+			type: ElementTypeType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		value: { type: GraphQLString },
+	})
+});
+
+const PreferencesType = new GraphQLObjectType({
+	name: 'Preferences',
+	fields: () => ({
+		id: { type: GraphQLID },
+		student_id: { type: GraphQLInt },
+		element_id: { type: GraphQLInt },
+		element_value: { type: GraphQLString },
+
+		students: {
+			type: new GraphQLList(StudentType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		elements: {
+			type: new GraphQLList(ElementType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const AchievementType = new GraphQLObjectType({
+	name: 'Achievement',
+	fields: () => ({
+		id: { type: GraphQLID },
+		name: { type: GraphQLString },
+
+		studentAchievements: {
+			type: new GraphQLList(StudentAchievementType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const StudentAchievementType = new GraphQLObjectType({
+	name: 'StudentAchievement',
+	fields: () => ({
+		id: { type: GraphQLID },
+		student_id: { type: GraphQLInt },
+		student: {
+			type: StudentType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		achievement_id: { type: GraphQLInt },
+		achievement: {
+			type: AchievementType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+	})
+});
+
+const ReviewType = new GraphQLObjectType({
+	name: 'Review',
+	fields: () => ({
+		id: { type: GraphQLID },
+		student_id: { type: GraphQLInt },
+		student: {
+			type: StudentType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		description: { type: GraphQLString },
+		rating: { type: GraphQLInt },
+		created_at: { type: GraphQLDate },
+
+		reviewElementHouses: {
+			type: new GraphQLList(ReviewElementHouseType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		reviewElementBadrooms: {
+			type: new GraphQLList(ReviewElementBadroomType),
+			resolve(parent, args) {
+				return {}
+			}
+		},
+	})
+});
+
+const ReviewElementHouseType = new GraphQLObjectType({
+	name: 'ReviewElementHouse',
+	fields: () => ({
+		id: { type: GraphQLID },
+		review_id: { type: GraphQLInt },
+		review: {
+			type: ReviewType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		element_id: { type: GraphQLInt },
+		element: {
+			type: ElementType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		house_id: { type: GraphQLInt },
+		house: {
+			type: HouseType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		element_rating: { type: GraphQLString },
+	})
+});
+
+const ReviewElementBadroomType = new GraphQLObjectType({
+	name: 'ReviewElementBadroom',
+	fields: () => ({
+		id: { type: GraphQLID },
+		review_id: { type: GraphQLInt },
+		review: {
+			type: ReviewType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		element_id: { type: GraphQLInt },
+		element: {
+			type: ElementType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		badroom_id: { type: GraphQLInt },
+		badroom: {
+			type: BadroomType,
+			resolve(parent, args) {
+				return {}
+			}
+		},
+
+		element_rating: { type: GraphQLString },
+	})
+});
+
+const NotificationType = new GraphQLObjectType({
+	name: 'Notification',
+	fields: () => ({
+		id: { type: GraphQLID },
+		message: { type: GraphQLString },
+		read: { type: GraphQLBoolean },
+	})
+});
+
+const RootQuery = new GraphQLObjectType({
+	name: 'RootQueryType',
+	fields: {
+		university: {
+			type: UniversityType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		universities: {
+			type: new GraphQLList(UniversityType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		person: {
+			type: PersonType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		persons: {
+			type: new GraphQLList(PersonType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		role: {
+			type: RoleType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		roles: {
+			type: new GraphQLList(RoleType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		student: {
+			type: StudentType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		students: {
+			type: new GraphQLList(StudentType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		landlord: {
+			type: LandlordType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		landlords: {
+			type: new GraphQLList(LandlordType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		house: {
+			type: HouseType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		houses: {
+			type: new GraphQLList(HouseType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		badroom: {
+			type: BadroomType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		badrooms: {
+			type: new GraphQLList(BadroomType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		category: {
+			type: CategoryType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		categories: {
+			type: new GraphQLList(CategoryType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		element: {
+			type: ElementType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		elements: {
+			type: new GraphQLList(ElementType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		elementType: {
+			type: ElementTypeType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		elementTypes: {
+			type: new GraphQLList(ElementTypeType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		elementTypeValues: {
+			type: ElementTypeValuesType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		elementTypeValuess: {
+			type: new GraphQLList(ElementTypeValuesType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		preferences: {
+			type: PreferencesType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		preferencess: {
+			type: new GraphQLList(PreferencesType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		achievement: {
+			type: AchievementType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		achievements: {
+			type: new GraphQLList(AchievementType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		studentAchievement: {
+			type: StudentAchievementType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		studentAchievements: {
+			type: new GraphQLList(StudentAchievementType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		review: {
+			type: ReviewType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		reviews: {
+			type: new GraphQLList(ReviewType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		reviewElementHouse: {
+			type: ReviewElementHouseType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		reviewElementHouses: {
+			type: new GraphQLList(ReviewElementHouseType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		reviewElementBadroom: {
+			type: ReviewElementBadroomType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		reviewElementBadrooms: {
+			type: new GraphQLList(ReviewElementBadroomType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+		notification: {
+			type: NotificationType,
+			args: { id: { type: GraphQLID } },
+			resolve(parent, args){
+				return {}
+			}
+		},
+		notifications: {
+			type: new GraphQLList(NotificationType),
+			resolve(parent, args){
+				return {}
+			}
+		},
+	}
+});
+
+module.exports = new GraphQLSchema({
+	query: RootQuery,
+});
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Mon Sep 09 2019 19:16:11 GMT+0300 (GMT+03:00)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+        </p>
+    </div>
+</footer>
+
+<script src="scripts/app.min.js"></script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
