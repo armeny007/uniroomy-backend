@@ -1,4 +1,4 @@
-# UniRoomi Backend Documentation Home Page
+# UniRoomy Backend Documentation Home Page
 
 ## API definition
 
