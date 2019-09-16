@@ -3,6 +3,7 @@
 Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphiql" target="_blank">Visual UniRoomy GraphQL editor</a>
 
 
+```
     schema {
       query: RootQueryType
       mutation: Mutation
@@ -684,3 +685,4 @@ Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphi
       city: String
     }
     
+```
