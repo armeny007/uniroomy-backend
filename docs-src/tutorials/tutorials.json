@@ -2,6 +2,9 @@
   "01-database-schema": {
     "title": "UniRoomy Database Schema"
   },
+  "02-graphql-schema": {
+    "title": "UniRoomy GraphQL Schema"
+  },
   "03-howtorun-instructions": {
     "title": "How To Run Instructions"
   },
