@@ -1,11 +1,9 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     
     <meta charset="utf-8">
-    <title>JSDoc: server.js</title>
+    <title>JSDoc: graphql-schema</title>
 
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -66,114 +64,137 @@
             <div class="column is-9-desktop">
                 <div class="content" id="main-content-wrapper">
                     <header class="page-title">
-                        <p>Source</p>
-                        <h1>server.js</h1>
+                        <p>Module</p>
+                        <h1>graphql-schema</h1>
                     </header>
                     
                     
 
 
 
+
+<section>
+
+<header>
     
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>/**
- * @module server
- *  
- * @description
- * Server module exposes API endpoints using Express.js
- *
- */
+        
+            
+        
+    
+</header>
 
-const app = require('express')();
-require('dotenv').config();
-const expressGraphQL = require('express-graphql');
-const mongoose = require('mongoose');
+<article>
+    <div class="container-overview">
+    
+        
+            <div class="description"><script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script><p>Schema module describes query types and mutations of UniRoomy backend API</p></div>
+        
 
-const schema = require('./graphql-schema');
-const { Student, Person } = require('./mongoose-schema');
-
-// let connectionString = 'mongodb://127.0.0.1:27017/uniroomy';
-let connectionString = process.env.MONGODB_CONNECTION_STRING;
-
-mongoose.Promise = global.Promise;
-mongoose.connect(connectionString)
-  .then(async () => { 
-    console.log('Connected to database'); 
-    // let st = await Student.find().limit(2);  
-    // let pe = await Person.find().limit(2);  
-    // console.log({st}); 
-    // console.log({pe});
-  })
-  .catch(err => console.log(`Error: ${err}`));
-
-// const {
-//   GraphQLSchema,
-//   GraphQLObjectType,
-//   GraphQLString,
-//   GraphQLInt,
-//   GraphQLList,
-// } = require('graphql');
-// const Knex = require('knex');
-
-// const tmpStudent = {
-//   id: 1,
-//   status: 'some-status',
-//   firstName: 'John',
-// }
-
-// const environment = process.env.ENVIRONMENT || 'development';
-// // const config = require('./knexfile')[environment];
-
-// // const knex = Knex(config);
-
-// const StudentType = new GraphQLObjectType({
-//   name: 'Student',
-//   description: 'Represents student',
-//   fields: () => ({
-//     id: { type: GraphQLInt },
-//     status: { type: GraphQLString },
-//     firstName: { type: GraphQLString },
-//   }),
-// });
-
-// const RootQuery = new GraphQLObjectType({
-//   name: 'RootQuery',
-//   description: 'Root query for UniRoomy backend API',
-//   fields: () => ({
-//     student: {
-//       type: new GraphQLList(StudentType),
-//       description: 'Student by ID',
-//       args: {
-//         id: { type: GraphQLInt }
-//       },
-//       async resolve(parent, args) {
-//         return tmpStudent;
-//       },
-//     },
-//   }),
-// });
-
-// const schema = new GraphQLSchema({
-//   query: RootQuery,
-// });
-
-app.use('/api/graphiql', expressGraphQL({
-  graphiql: true,
-  schema,
-}));
-
-app.use('/api', expressGraphQL({
-  graphiql: false,
-  schema,
-}));
+        
+            
 
 
-const port = process.env.PORT || 3003;
-app.listen(port, () => console.log(`Server is running on port ${port}`));
-</code></pre>
-        </article>
-    </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="graphql-schema.js.html" class="button">View Source</a>
+            <span>
+                <a href="graphql-schema.js.html">graphql-schema.js</a>, <a href="graphql-schema.js.html#line1">line 1</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
 
 
 

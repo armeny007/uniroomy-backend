@@ -59,7 +59,7 @@
             <div class="column is-3" id="sidebarNav">
                 <div class="sidebar">
                     <nav>
-                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-algorithm.html">Search Algorithm Description</a></li></ul><h3>Modules</h3><ul><li><a href="module-Mongoose%2520Schema.html">Mongoose Schema</a></li><li><a href="module-schema.html">schema</a></li><li><a href="module-server.html">server</a></li></ul></div>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-algorithm.html">Search Algorithm Description</a></li></ul><h3>Modules</h3><ul><li><a href="module-graphql-schema.html">graphql-schema</a></li><li><a href="module-mongoose-schema.html">mongoose-schema</a></li><li><a href="module-server.html">server</a></li></ul></div>
                     </nav>
                 </div>
             </div>
@@ -78,7 +78,7 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * @module schema
+ * @module graphql-schema
  * 
  * @description
  * Schema module describes query types and mutations of UniRoomy backend API
@@ -103,6 +103,9 @@ const {
   GraphQLTime,
   GraphQLDateTime
 } = require('graphql-iso-date');
+
+const { GraphQLUpload } = require('graphql-upload');
+
 
 const maxReturnedRows = 50;
 
@@ -142,9 +145,9 @@ const UniversityType = new GraphQLObjectType({
 	name: 'University',
 	description: 'Represents university.',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		name: { type: GraphQLString },
-		city: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
+		city: { type: GraphQLString  },
 
 		houseUniversities: {
 			type: new GraphQLList(HouseUniversityType),
@@ -170,8 +173,8 @@ const UniversityInput = new GraphQLInputObjectType({
 	name: 'UniversityInput',
 	description: 'Input fields for university',
 	fields: {
-		name: { type: new GraphQLNonNull(GraphQLString) },
-		city: { type: GraphQLString },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
+		city: { type: GraphQLString  },
 	}
 });
 
@@ -179,15 +182,15 @@ const PersonType = new GraphQLObjectType({
 	name: 'Person',
 	description: 'Represents person. Contains common fields for different roles (student/landlord).',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		first_name: { type: GraphQLString },
-		last_name: { type: GraphQLString },
-		date_of_birth: { type: GraphQLDate },
-		email: { type: GraphQLString },
-		role_id: { type: GraphQLID },
-		is_admin: { type: GraphQLBoolean },
-		created_at: { type: GraphQLDateTime },
-		updated_at: { type: GraphQLDateTime },
+		_id: { type: GraphQLID  },
+		first_name: { type: GraphQLString  },
+		last_name: { type: GraphQLString  },
+		date_of_birth: { type: GraphQLDate  },
+		email: { type: GraphQLString  },
+		role_id: { type: GraphQLID  },
+		is_admin: { type: GraphQLBoolean  },
+		created_at: { type: GraphQLDateTime  },
+		updated_at: { type: GraphQLDateTime  },
 
 		role: {
 			type: RoleType,
@@ -234,26 +237,26 @@ const PersonType = new GraphQLObjectType({
 
 const PersonInput = new GraphQLInputObjectType({
 	name: 'PersonInput',
-	description: 'undefined',
+	description: '',
 	fields: {
-		first_name: { type: new GraphQLNonNull(GraphQLString) },
-		last_name: { type: GraphQLString },
-		date_of_birth: { type: GraphQLDate },
-		email: { type: new GraphQLNonNull(GraphQLString) },
-		is_admin: { type: GraphQLBoolean },
-		created_at: { type: GraphQLDateTime },
-		updated_at: { type: GraphQLDateTime },
+		first_name: { type: new GraphQLNonNull(GraphQLString)  },
+		last_name: { type: GraphQLString  },
+		date_of_birth: { type: GraphQLDate  },
+		email: { type: new GraphQLNonNull(GraphQLString)  },
+		is_admin: { type: GraphQLBoolean  },
+		created_at: { type: GraphQLDateTime  },
+		updated_at: { type: GraphQLDateTime  },
 	}
 });
 
 const TicketType = new GraphQLObjectType({
 	name: 'Ticket',
-	description: '',
+	description: 'Represent ticket created by person',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		message: { type: GraphQLString },
-		person_id: { type: GraphQLID },
-		created_at: { type: GraphQLDateTime },
+		_id: { type: GraphQLID  },
+		message: { type: GraphQLString  },
+		person_id: { type: GraphQLID  },
+		created_at: { type: GraphQLDateTime  },
 
 		person: {
 			type: PersonType,
@@ -270,9 +273,9 @@ const TicketInput = new GraphQLInputObjectType({
 	name: 'TicketInput',
 	description: '',
 	fields: {
-		message: { type: new GraphQLNonNull(GraphQLString) },
-		person_id: { type: new GraphQLNonNull(GraphQLID) },
-		created_at: { type: GraphQLDateTime },
+		message: { type: new GraphQLNonNull(GraphQLString)  },
+		person_id: { type: new GraphQLNonNull(GraphQLID)  },
+		created_at: { type: GraphQLDateTime  },
 	}
 });
 
@@ -280,8 +283,8 @@ const RoleType = new GraphQLObjectType({
 	name: 'Role',
 	description: 'Represents UniRoomy person role. 1 - student, 2 - landlord',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		name: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
 
 		persons: {
 			type: new GraphQLList(PersonType),
@@ -297,9 +300,9 @@ const RoleType = new GraphQLObjectType({
 
 const RoleInput = new GraphQLInputObjectType({
 	name: 'RoleInput',
-	description: 'undefined',
+	description: '',
 	fields: {
-		name: { type: new GraphQLNonNull(GraphQLString) },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
 	}
 });
 
@@ -307,11 +310,11 @@ const StudentType = new GraphQLObjectType({
 	name: 'Student',
 	description: 'Represents student',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		university_id: { type: GraphQLID },
-		status_id: { type: GraphQLID },
-		verified: { type: GraphQLBoolean },
-		tokens: { type: GraphQLInt },
+		_id: { type: GraphQLID  },
+		university_id: { type: GraphQLID  },
+		status_id: { type: GraphQLID  },
+		verified: { type: GraphQLBoolean  },
+		tokens: { type: GraphQLInt  },
 
 		person: {
 			type: PersonType,
@@ -372,22 +375,22 @@ const StudentType = new GraphQLObjectType({
 
 const StudentInput = new GraphQLInputObjectType({
 	name: 'StudentInput',
-	description: 'undefined',
+	description: '',
 	fields: {
-		university_id: { type: GraphQLID },
-		status_id: { type: GraphQLID },
-		verified: { type: GraphQLBoolean },
-		tokens: { type: GraphQLInt },
+		university_id: { type: GraphQLID  },
+		status_id: { type: GraphQLID  },
+		verified: { type: GraphQLBoolean  },
+		tokens: { type: GraphQLInt  },
 		person : { type: PersonInput }
 	}
 });
 
 const StatusType = new GraphQLObjectType({
 	name: 'Status',
-	description: '',
+	description: 'Represents student status: 1 - Not a Student, 2 - Prospective Student, 3 - Undergraduate Student, 4 - Graduated Student',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		name: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
 
 		students: {
 			type: new GraphQLList(StudentType),
@@ -405,7 +408,7 @@ const StatusInput = new GraphQLInputObjectType({
 	name: 'StatusInput',
 	description: '',
 	fields: {
-		name: { type: new GraphQLNonNull(GraphQLString) },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
 	}
 });
 
@@ -413,13 +416,13 @@ const LandlordType = new GraphQLObjectType({
 	name: 'Landlord',
 	description: 'Represents landlord',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		landlord_kind_id: { type: GraphQLID },
-		company_name: { type: GraphQLString },
-		responsible_for_houses: { type: GraphQLInt },
-		responsible_for_beds: { type: GraphQLInt },
-		contact_name: { type: GraphQLString },
-		contact_number: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		landlord_kind_id: { type: GraphQLID  },
+		company_name: { type: GraphQLString  },
+		responsible_for_houses: { type: GraphQLInt  },
+		responsible_for_beds: { type: GraphQLInt  },
+		contact_name: { type: GraphQLString  },
+		contact_number: { type: GraphQLString  },
 
 		person: {
 			type: PersonType,
@@ -428,7 +431,7 @@ const LandlordType = new GraphQLObjectType({
 				return await Person.findOne({_id: parent._id})
 			}
 		},
-		landlordKind: {
+		landlord_kind: {
 			type: LandlordKindType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
@@ -449,24 +452,24 @@ const LandlordType = new GraphQLObjectType({
 
 const LandlordInput = new GraphQLInputObjectType({
 	name: 'LandlordInput',
-	description: 'undefined',
+	description: '',
 	fields: {
-		landlord_kind_id: { type: GraphQLID },
-		company_name: { type: GraphQLString },
-		responsible_for_houses: { type: GraphQLInt },
-		responsible_for_beds: { type: GraphQLInt },
-		contact_name: { type: GraphQLString },
-		contact_number: { type: GraphQLString },
+		landlord_kind_id: { type: GraphQLID  },
+		company_name: { type: GraphQLString  },
+		responsible_for_houses: { type: GraphQLInt  },
+		responsible_for_beds: { type: GraphQLInt  },
+		contact_name: { type: GraphQLString  },
+		contact_number: { type: GraphQLString  },
 		person : { type: PersonInput }
 	}
 });
 
 const LandlordKindType = new GraphQLObjectType({
 	name: 'LandlordKind',
-	description: '',
+	description: 'Type of Landlord: 1 - Landlord, 2 - Property Developer, 3 - Letting Agency, 4 - University',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		name: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
 
 		landlords: {
 			type: new GraphQLList(LandlordType),
@@ -484,24 +487,24 @@ const LandlordKindInput = new GraphQLInputObjectType({
 	name: 'LandlordKindInput',
 	description: '',
 	fields: {
-		name: { type: new GraphQLNonNull(GraphQLString) },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
 	}
 });
 
 const HouseType = new GraphQLObjectType({
 	name: 'House',
-	description: '',
+	description: 'Represents house',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		landlord_id: { type: GraphQLID },
-		name: { type: GraphQLString },
-		description: { type: GraphQLString },
-		city: { type: GraphQLString },
-		street: { type: GraphQLString },
-		zip: { type: GraphQLString },
-		address: { type: GraphQLString },
-		bathes: { type: GraphQLInt },
-		rating: { type: GraphQLFloat },
+		_id: { type: GraphQLID  },
+		landlord_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
+		description: { type: GraphQLString  },
+		city: { type: GraphQLString  },
+		street: { type: GraphQLString  },
+		zip: { type: GraphQLString  },
+		address: { type: GraphQLString  },
+		bathes: { type: GraphQLInt  },
+		rating: { type: GraphQLFloat  },
 
 		landlord: {
 			type: LandlordType,
@@ -574,25 +577,25 @@ const HouseInput = new GraphQLInputObjectType({
 	name: 'HouseInput',
 	description: '',
 	fields: {
-		landlord_id: { type: new GraphQLNonNull(GraphQLID) },
-		name: { type: GraphQLString },
-		description: { type: GraphQLString },
-		city: { type: GraphQLString },
-		street: { type: GraphQLString },
-		zip: { type: GraphQLString },
-		address: { type: GraphQLString },
-		bathes: { type: GraphQLInt },
-		rating: { type: GraphQLFloat },
+		landlord_id: { type: new GraphQLNonNull(GraphQLID)  },
+		name: { type: GraphQLString  },
+		description: { type: GraphQLString  },
+		city: { type: GraphQLString  },
+		street: { type: GraphQLString  },
+		zip: { type: GraphQLString  },
+		address: { type: GraphQLString  },
+		bathes: { type: GraphQLInt  },
+		rating: { type: GraphQLFloat  },
 	}
 });
 
 const HousePhotoType = new GraphQLObjectType({
 	name: 'HousePhoto',
-	description: '',
+	description: 'Represents house photos',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		url: { type: GraphQLString },
-		house_id: { type: GraphQLID },
+		_id: { type: GraphQLID  },
+		url: { type: GraphQLString  },
+		house_id: { type: GraphQLID  },
 
 		house: {
 			type: HouseType,
@@ -609,18 +612,18 @@ const HousePhotoInput = new GraphQLInputObjectType({
 	name: 'HousePhotoInput',
 	description: '',
 	fields: {
-		url: { type: new GraphQLNonNull(GraphQLString) },
-		house_id: { type: new GraphQLNonNull(GraphQLID) },
+		url: { type: new GraphQLNonNull(GraphQLUpload)  },
+		house_id: { type: new GraphQLNonNull(GraphQLID)  },
 	}
 });
 
 const BedroomPhotoType = new GraphQLObjectType({
 	name: 'BedroomPhoto',
-	description: '',
+	description: 'Represents house photos',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		url: { type: GraphQLString },
-		bedroom_id: { type: GraphQLID },
+		_id: { type: GraphQLID  },
+		url: { type: GraphQLString  },
+		bedroom_id: { type: GraphQLID  },
 
 		bedroom: {
 			type: BedroomType,
@@ -637,20 +640,20 @@ const BedroomPhotoInput = new GraphQLInputObjectType({
 	name: 'BedroomPhotoInput',
 	description: '',
 	fields: {
-		url: { type: new GraphQLNonNull(GraphQLString) },
-		bedroom_id: { type: new GraphQLNonNull(GraphQLID) },
+		url: { type: new GraphQLNonNull(GraphQLString)  },
+		bedroom_id: { type: new GraphQLNonNull(GraphQLID)  },
 	}
 });
 
 const FactType = new GraphQLObjectType({
 	name: 'Fact',
-	description: '',
+	description: 'Represents a possible fact about a house',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		fact_group_id: { type: GraphQLID },
-		name: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		fact_group_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
 
-		factGroup: {
+		fact_group: {
 			type: FactGroupType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
@@ -673,17 +676,17 @@ const FactInput = new GraphQLInputObjectType({
 	name: 'FactInput',
 	description: '',
 	fields: {
-		fact_group_id: { type: new GraphQLNonNull(GraphQLID) },
-		name: { type: new GraphQLNonNull(GraphQLString) },
+		fact_group_id: { type: new GraphQLNonNull(GraphQLID)  },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
 	}
 });
 
 const FactGroupType = new GraphQLObjectType({
 	name: 'FactGroup',
-	description: '',
+	description: 'Group of facts',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		name: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
 
 		facts: {
 			type: new GraphQLList(FactType),
@@ -701,17 +704,17 @@ const FactGroupInput = new GraphQLInputObjectType({
 	name: 'FactGroupInput',
 	description: '',
 	fields: {
-		name: { type: new GraphQLNonNull(GraphQLString) },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
 	}
 });
 
 const HouseFactType = new GraphQLObjectType({
 	name: 'HouseFact',
-	description: '',
+	description: 'Represents fact about a house',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		house_id: { type: GraphQLID },
-		fact_id: { type: GraphQLID },
+		_id: { type: GraphQLID  },
+		house_id: { type: GraphQLID  },
+		fact_id: { type: GraphQLID  },
 
 		house: {
 			type: HouseType,
@@ -735,21 +738,21 @@ const HouseFactInput = new GraphQLInputObjectType({
 	name: 'HouseFactInput',
 	description: '',
 	fields: {
-		house_id: { type: new GraphQLNonNull(GraphQLID) },
-		fact_id: { type: new GraphQLNonNull(GraphQLID) },
+		house_id: { type: new GraphQLNonNull(GraphQLID)  },
+		fact_id: { type: new GraphQLNonNull(GraphQLID)  },
 	}
 });
 
 const HouseUniversityType = new GraphQLObjectType({
 	name: 'HouseUniversity',
-	description: '',
+	description: 'For wich university the house is available for search',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		house_id: { type: GraphQLID },
-		university_id: { type: GraphQLID },
-		time_by_car: { type: GraphQLInt },
-		time_by_walk: { type: GraphQLInt },
-		time_by_bus: { type: GraphQLInt },
+		_id: { type: GraphQLID  },
+		house_id: { type: GraphQLID  },
+		university_id: { type: GraphQLID  },
+		time_by_car: { type: GraphQLInt  },
+		time_by_walk: { type: GraphQLInt  },
+		time_by_bus: { type: GraphQLInt  },
 
 		house: {
 			type: HouseType,
@@ -773,30 +776,30 @@ const HouseUniversityInput = new GraphQLInputObjectType({
 	name: 'HouseUniversityInput',
 	description: '',
 	fields: {
-		house_id: { type: new GraphQLNonNull(GraphQLID) },
-		university_id: { type: new GraphQLNonNull(GraphQLID) },
-		time_by_car: { type: GraphQLInt },
-		time_by_walk: { type: GraphQLInt },
-		time_by_bus: { type: GraphQLInt },
+		house_id: { type: new GraphQLNonNull(GraphQLID)  },
+		university_id: { type: new GraphQLNonNull(GraphQLID)  },
+		time_by_car: { type: GraphQLInt  },
+		time_by_walk: { type: GraphQLInt  },
+		time_by_bus: { type: GraphQLInt  },
 	}
 });
 
 const BedroomType = new GraphQLObjectType({
 	name: 'Bedroom',
-	description: '',
+	description: 'Bedroom of a house',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		house_id: { type: GraphQLID },
-		name: { type: GraphQLString },
-		beds: { type: GraphQLInt },
-		baths: { type: GraphQLInt },
-		weekly_price: { type: GraphQLFloat },
-		monthly_price: { type: GraphQLFloat },
-		rating: { type: GraphQLFloat },
-		contract_length: { type: GraphQLInt },
-		contract_starts: { type: GraphQLDate },
-		contract_ends: { type: GraphQLDate },
-		occupied: { type: GraphQLBoolean },
+		_id: { type: GraphQLID  },
+		house_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
+		beds: { type: GraphQLInt  },
+		baths: { type: GraphQLInt  },
+		weekly_price: { type: GraphQLFloat  },
+		monthly_price: { type: GraphQLFloat  },
+		rating: { type: GraphQLFloat  },
+		contract_length: { type: GraphQLInt  },
+		contract_starts: { type: GraphQLDate  },
+		contract_ends: { type: GraphQLDate  },
+		occupied: { type: GraphQLBoolean  },
 
 		house: {
 			type: HouseType,
@@ -821,26 +824,26 @@ const BedroomInput = new GraphQLInputObjectType({
 	name: 'BedroomInput',
 	description: '',
 	fields: {
-		house_id: { type: new GraphQLNonNull(GraphQLID) },
-		name: { type: GraphQLString },
-		beds: { type: GraphQLInt },
-		baths: { type: GraphQLInt },
-		weekly_price: { type: GraphQLFloat },
-		monthly_price: { type: GraphQLFloat },
-		rating: { type: GraphQLFloat },
-		contract_length: { type: GraphQLInt },
-		contract_starts: { type: GraphQLDate },
-		contract_ends: { type: GraphQLDate },
-		occupied: { type: GraphQLBoolean },
+		house_id: { type: new GraphQLNonNull(GraphQLID)  },
+		name: { type: GraphQLString  },
+		beds: { type: GraphQLInt  },
+		baths: { type: GraphQLInt  },
+		weekly_price: { type: GraphQLFloat  },
+		monthly_price: { type: GraphQLFloat  },
+		rating: { type: GraphQLFloat  },
+		contract_length: { type: GraphQLInt  },
+		contract_starts: { type: GraphQLDate  },
+		contract_ends: { type: GraphQLDate  },
+		occupied: { type: GraphQLBoolean  },
 	}
 });
 
 const CategoryType = new GraphQLObjectType({
 	name: 'Category',
-	description: '',
+	description: 'Category of element',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		name: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
 
 		elements: {
 			type: new GraphQLList(ElementType),
@@ -858,18 +861,18 @@ const CategoryInput = new GraphQLInputObjectType({
 	name: 'CategoryInput',
 	description: '',
 	fields: {
-		name: { type: new GraphQLNonNull(GraphQLString) },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
 	}
 });
 
 const ElementType = new GraphQLObjectType({
 	name: 'Element',
-	description: '',
+	description: 'Represents element. Element describes one of characteristics of a house.',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		name: { type: GraphQLString },
-		category_id: { type: GraphQLID },
-		element_kind_id: { type: GraphQLID },
+		_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
+		category_id: { type: GraphQLID  },
+		element_kind_id: { type: GraphQLID  },
 
 		category: {
 			type: CategoryType,
@@ -878,7 +881,7 @@ const ElementType = new GraphQLObjectType({
 				return await Category.findOne({_id: parent.category_id})
 			}
 		},
-		elementKind: {
+		element_kind: {
 			type: ElementKindType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
@@ -909,20 +912,20 @@ const ElementInput = new GraphQLInputObjectType({
 	name: 'ElementInput',
 	description: '',
 	fields: {
-		name: { type: new GraphQLNonNull(GraphQLString) },
-		category_id: { type: new GraphQLNonNull(GraphQLID) },
-		element_kind_id: { type: new GraphQLNonNull(GraphQLID) },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
+		category_id: { type: new GraphQLNonNull(GraphQLID)  },
+		element_kind_id: { type: new GraphQLNonNull(GraphQLID)  },
 	}
 });
 
 const ElementKindType = new GraphQLObjectType({
 	name: 'ElementKind',
-	description: '',
+	description: 'Represents element type. (used word "kind" instead of "type" because of entity type name collisions)',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		name: { type: GraphQLString },
-		range_from: { type: GraphQLInt },
-		range_to: { type: GraphQLInt },
+		_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
+		range_from: { type: GraphQLInt  },
+		range_to: { type: GraphQLInt  },
 
 		elements: {
 			type: new GraphQLList(ElementType),
@@ -948,21 +951,21 @@ const ElementKindInput = new GraphQLInputObjectType({
 	name: 'ElementKindInput',
 	description: '',
 	fields: {
-		name: { type: new GraphQLNonNull(GraphQLString) },
-		range_from: { type: GraphQLInt },
-		range_to: { type: GraphQLInt },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
+		range_from: { type: GraphQLInt  },
+		range_to: { type: GraphQLInt  },
 	}
 });
 
 const ElementKindValuesType = new GraphQLObjectType({
 	name: 'ElementKindValues',
-	description: '',
+	description: 'Represents possible value of an element type',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		element_kind_id: { type: GraphQLID },
-		value: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		element_kind_id: { type: GraphQLID  },
+		value: { type: GraphQLString  },
 
-		elementKind: {
+		element_kind: {
 			type: ElementKindType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
@@ -977,19 +980,19 @@ const ElementKindValuesInput = new GraphQLInputObjectType({
 	name: 'ElementKindValuesInput',
 	description: '',
 	fields: {
-		element_kind_id: { type: new GraphQLNonNull(GraphQLID) },
-		value: { type: GraphQLString },
+		element_kind_id: { type: new GraphQLNonNull(GraphQLID)  },
+		value: { type: GraphQLString  },
 	}
 });
 
 const PreferenceType = new GraphQLObjectType({
 	name: 'Preference',
-	description: '',
+	description: 'Represents student`s preferred element',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		student_id: { type: GraphQLID },
-		element_id: { type: GraphQLID },
-		element_weight: { type: GraphQLFloat },
+		_id: { type: GraphQLID  },
+		student_id: { type: GraphQLID  },
+		element_id: { type: GraphQLID  },
+		element_weight: { type: GraphQLFloat  },
 
 		student: {
 			type: StudentType,
@@ -1013,18 +1016,18 @@ const PreferenceInput = new GraphQLInputObjectType({
 	name: 'PreferenceInput',
 	description: '',
 	fields: {
-		student_id: { type: new GraphQLNonNull(GraphQLID) },
-		element_id: { type: new GraphQLNonNull(GraphQLID) },
-		element_weight: { type: GraphQLFloat },
+		student_id: { type: new GraphQLNonNull(GraphQLID)  },
+		element_id: { type: new GraphQLNonNull(GraphQLID)  },
+		element_weight: { type: GraphQLFloat  },
 	}
 });
 
 const AchievementType = new GraphQLObjectType({
 	name: 'Achievement',
-	description: '',
+	description: 'Represents possible achievement',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		name: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
 
 		studentAchievements: {
 			type: new GraphQLList(StudentAchievementType),
@@ -1042,18 +1045,18 @@ const AchievementInput = new GraphQLInputObjectType({
 	name: 'AchievementInput',
 	description: '',
 	fields: {
-		name: { type: new GraphQLNonNull(GraphQLString) },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
 	}
 });
 
 const StudentAchievementType = new GraphQLObjectType({
 	name: 'StudentAchievement',
-	description: '',
+	description: 'Represents an achievement of a student',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		student_id: { type: GraphQLID },
-		achievement_id: { type: GraphQLID },
-		created_at: { type: GraphQLDateTime },
+		_id: { type: GraphQLID  },
+		student_id: { type: GraphQLID  },
+		achievement_id: { type: GraphQLID  },
+		created_at: { type: GraphQLDateTime  },
 
 		student: {
 			type: StudentType,
@@ -1077,22 +1080,22 @@ const StudentAchievementInput = new GraphQLInputObjectType({
 	name: 'StudentAchievementInput',
 	description: '',
 	fields: {
-		student_id: { type: new GraphQLNonNull(GraphQLID) },
-		achievement_id: { type: new GraphQLNonNull(GraphQLID) },
-		created_at: { type: GraphQLDateTime },
+		student_id: { type: new GraphQLNonNull(GraphQLID)  },
+		achievement_id: { type: new GraphQLNonNull(GraphQLID)  },
+		created_at: { type: GraphQLDateTime  },
 	}
 });
 
 const ReviewType = new GraphQLObjectType({
 	name: 'Review',
-	description: '',
+	description: 'Represents review of a house',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		student_id: { type: GraphQLID },
-		house_id: { type: GraphQLID },
-		description: { type: GraphQLString },
-		house_rating: { type: GraphQLInt },
-		created_at: { type: GraphQLDate },
+		_id: { type: GraphQLID  },
+		student_id: { type: GraphQLID  },
+		house_id: { type: GraphQLID  },
+		description: { type: GraphQLString  },
+		house_rating: { type: GraphQLInt  },
+		created_at: { type: GraphQLDate  },
 
 		student: {
 			type: StudentType,
@@ -1124,22 +1127,22 @@ const ReviewInput = new GraphQLInputObjectType({
 	name: 'ReviewInput',
 	description: '',
 	fields: {
-		student_id: { type: new GraphQLNonNull(GraphQLID) },
-		house_id: { type: new GraphQLNonNull(GraphQLID) },
-		description: { type: new GraphQLNonNull(GraphQLString) },
-		house_rating: { type: new GraphQLNonNull(GraphQLInt) },
-		created_at: { type: GraphQLDate },
+		student_id: { type: new GraphQLNonNull(GraphQLID)  },
+		house_id: { type: new GraphQLNonNull(GraphQLID)  },
+		description: { type: new GraphQLNonNull(GraphQLString)  },
+		house_rating: { type: new GraphQLNonNull(GraphQLInt)  },
+		created_at: { type: GraphQLDate  },
 	}
 });
 
 const ReviewHouseElementType = new GraphQLObjectType({
 	name: 'ReviewHouseElement',
-	description: '',
+	description: 'Represents an element of review of a house',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		review_id: { type: GraphQLID },
-		element_id: { type: GraphQLID },
-		element_rating: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		review_id: { type: GraphQLID  },
+		element_id: { type: GraphQLID  },
+		element_rating: { type: GraphQLString  },
 
 		review: {
 			type: ReviewType,
@@ -1163,23 +1166,23 @@ const ReviewHouseElementInput = new GraphQLInputObjectType({
 	name: 'ReviewHouseElementInput',
 	description: '',
 	fields: {
-		review_id: { type: new GraphQLNonNull(GraphQLID) },
-		element_id: { type: new GraphQLNonNull(GraphQLID) },
-		element_rating: { type: new GraphQLNonNull(GraphQLString) },
+		review_id: { type: new GraphQLNonNull(GraphQLID)  },
+		element_id: { type: new GraphQLNonNull(GraphQLID)  },
+		element_rating: { type: new GraphQLNonNull(GraphQLString)  },
 	}
 });
 
 const NotificationType = new GraphQLObjectType({
 	name: 'Notification',
-	description: '',
+	description: 'Represents notification of a person',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		person_id: { type: GraphQLID },
-		title: { type: GraphQLString },
-		subtitle: { type: GraphQLString },
-		full_description: { type: GraphQLString },
-		action: { type: GraphQLString },
-		read: { type: GraphQLBoolean },
+		_id: { type: GraphQLID  },
+		person_id: { type: GraphQLID  },
+		title: { type: GraphQLString  },
+		subtitle: { type: GraphQLString  },
+		full_description: { type: GraphQLString  },
+		action: { type: GraphQLString  },
+		read: { type: GraphQLBoolean  },
 
 		person: {
 			type: PersonType,
@@ -1196,21 +1199,21 @@ const NotificationInput = new GraphQLInputObjectType({
 	name: 'NotificationInput',
 	description: '',
 	fields: {
-		person_id: { type: new GraphQLNonNull(GraphQLID) },
-		title: { type: GraphQLString },
-		subtitle: { type: GraphQLString },
-		full_description: { type: GraphQLString },
-		action: { type: GraphQLString },
-		read: { type: GraphQLBoolean },
+		person_id: { type: new GraphQLNonNull(GraphQLID)  },
+		title: { type: GraphQLString  },
+		subtitle: { type: GraphQLString  },
+		full_description: { type: GraphQLString  },
+		action: { type: GraphQLString  },
+		read: { type: GraphQLBoolean  },
 	}
 });
 
 const BillType = new GraphQLObjectType({
 	name: 'Bill',
-	description: '',
+	description: 'Represents possible bill wich could be included to rent',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		name: { type: GraphQLString },
+		_id: { type: GraphQLID  },
+		name: { type: GraphQLString  },
 
 		houseBills: {
 			type: new GraphQLList(HouseBillType),
@@ -1228,17 +1231,17 @@ const BillInput = new GraphQLInputObjectType({
 	name: 'BillInput',
 	description: '',
 	fields: {
-		name: { type: new GraphQLNonNull(GraphQLString) },
+		name: { type: new GraphQLNonNull(GraphQLString)  },
 	}
 });
 
 const HouseBillType = new GraphQLObjectType({
 	name: 'HouseBill',
-	description: '',
+	description: 'Represents a bill included to rent of a house',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		house_id: { type: GraphQLID },
-		bill_id: { type: GraphQLID },
+		_id: { type: GraphQLID  },
+		house_id: { type: GraphQLID  },
+		bill_id: { type: GraphQLID  },
 
 		house: {
 			type: HouseType,
@@ -1262,18 +1265,18 @@ const HouseBillInput = new GraphQLInputObjectType({
 	name: 'HouseBillInput',
 	description: '',
 	fields: {
-		house_id: { type: new GraphQLNonNull(GraphQLID) },
-		bill_id: { type: new GraphQLNonNull(GraphQLID) },
+		house_id: { type: new GraphQLNonNull(GraphQLID)  },
+		bill_id: { type: new GraphQLNonNull(GraphQLID)  },
 	}
 });
 
 const FavoriteHouseType = new GraphQLObjectType({
 	name: 'FavoriteHouse',
-	description: '',
+	description: 'Represents a favorite house of a student',
 	fields: () => ({
-		_id: { type: GraphQLID },
-		house_id: { type: GraphQLID },
-		student_id: { type: GraphQLID },
+		_id: { type: GraphQLID  },
+		house_id: { type: GraphQLID  },
+		student_id: { type: GraphQLID  },
 
 		house: {
 			type: HouseType,
@@ -1297,8 +1300,8 @@ const FavoriteHouseInput = new GraphQLInputObjectType({
 	name: 'FavoriteHouseInput',
 	description: '',
 	fields: {
-		house_id: { type: new GraphQLNonNull(GraphQLID) },
-		student_id: { type: new GraphQLNonNull(GraphQLID) },
+		house_id: { type: new GraphQLNonNull(GraphQLID)  },
+		student_id: { type: new GraphQLNonNull(GraphQLID)  },
 	}
 });
 
@@ -1403,14 +1406,14 @@ const RootQuery = new GraphQLObjectType({
 				return await Landlord.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		landlordKind: {
+		landlord_kind: {
 			type: LandlordKindType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await LandlordKind.findOne({_id: args._id})
 			}
 		},
-		landlordKinds: {
+		landlord_kinds: {
 			type: new GraphQLList(LandlordKindType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
@@ -1431,28 +1434,28 @@ const RootQuery = new GraphQLObjectType({
 				return await House.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		housePhoto: {
+		house_photo: {
 			type: HousePhotoType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await HousePhoto.findOne({_id: args._id})
 			}
 		},
-		housePhotos: {
+		house_photos: {
 			type: new GraphQLList(HousePhotoType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
 				return await HousePhoto.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		bedroomPhoto: {
+		bedroom_photo: {
 			type: BedroomPhotoType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await BedroomPhoto.findOne({_id: args._id})
 			}
 		},
-		bedroomPhotos: {
+		bedroom_photos: {
 			type: new GraphQLList(BedroomPhotoType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
@@ -1473,42 +1476,42 @@ const RootQuery = new GraphQLObjectType({
 				return await Fact.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		factGroup: {
+		fact_group: {
 			type: FactGroupType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await FactGroup.findOne({_id: args._id})
 			}
 		},
-		factGroups: {
+		fact_groups: {
 			type: new GraphQLList(FactGroupType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
 				return await FactGroup.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		houseFact: {
+		house_fact: {
 			type: HouseFactType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await HouseFact.findOne({_id: args._id})
 			}
 		},
-		houseFacts: {
+		house_facts: {
 			type: new GraphQLList(HouseFactType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
 				return await HouseFact.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		houseUniversity: {
+		house_university: {
 			type: HouseUniversityType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await HouseUniversity.findOne({_id: args._id})
 			}
 		},
-		houseUniversities: {
+		house_universities: {
 			type: new GraphQLList(HouseUniversityType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
@@ -1557,28 +1560,28 @@ const RootQuery = new GraphQLObjectType({
 				return await Element.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		elementKind: {
+		element_kind: {
 			type: ElementKindType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await ElementKind.findOne({_id: args._id})
 			}
 		},
-		elementKinds: {
+		element_kinds: {
 			type: new GraphQLList(ElementKindType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
 				return await ElementKind.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		elementKindValues: {
+		element_kind_values: {
 			type: ElementKindValuesType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await ElementKindValues.findOne({_id: args._id})
 			}
 		},
-		elementKindValueses: {
+		element_kind_valueses: {
 			type: new GraphQLList(ElementKindValuesType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
@@ -1613,14 +1616,14 @@ const RootQuery = new GraphQLObjectType({
 				return await Achievement.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		studentAchievement: {
+		student_achievement: {
 			type: StudentAchievementType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await StudentAchievement.findOne({_id: args._id})
 			}
 		},
-		studentAchievements: {
+		student_achievements: {
 			type: new GraphQLList(StudentAchievementType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
@@ -1641,14 +1644,14 @@ const RootQuery = new GraphQLObjectType({
 				return await Review.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		reviewHouseElement: {
+		review_house_element: {
 			type: ReviewHouseElementType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await ReviewHouseElement.findOne({_id: args._id})
 			}
 		},
-		reviewHouseElements: {
+		review_house_elements: {
 			type: new GraphQLList(ReviewHouseElementType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
@@ -1683,28 +1686,28 @@ const RootQuery = new GraphQLObjectType({
 				return await Bill.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		houseBill: {
+		house_bill: {
 			type: HouseBillType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await HouseBill.findOne({_id: args._id})
 			}
 		},
-		houseBills: {
+		house_bills: {
 			type: new GraphQLList(HouseBillType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
 				return await HouseBill.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
 			}
 		},
-		favoriteHouse: {
+		favorite_house: {
 			type: FavoriteHouseType,
 			args: { _id: { type: GraphQLID }, },
 			async resolve(parent, args){
 				return await FavoriteHouse.findOne({_id: args._id})
 			}
 		},
-		favoriteHouses: {
+		favorite_houses: {
 			type: new GraphQLList(FavoriteHouseType),
 			args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
 			async resolve(parent, args){
@@ -2392,7 +2395,7 @@ module.exports = new GraphQLSchema({
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Mon Sep 16 2019 15:27:33 GMT+0300 (GMT+03:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Mon Sep 16 2019 15:34:38 GMT+0300 (GMT+03:00)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
