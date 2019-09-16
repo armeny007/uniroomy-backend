@@ -57,7 +57,7 @@
             <div class="column is-3" id="sidebarNav">
                 <div class="sidebar">
                     <nav>
-                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-algorithm.html">Search Algorithm Description</a></li></ul><h3>Modules</h3><ul><li><a href="module-Mongoose%2520Schema.html">Mongoose Schema</a></li><li><a href="module-schema.html">schema</a></li><li><a href="module-server.html">server</a></li></ul></div>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-algorithm.html">Search Algorithm Description</a></li></ul><h3>Modules</h3><ul><li><a href="module-Mongoose%2520Schema.html">Mongoose Schema</a></li><li><a href="module-schema.html">schema</a></li><li><a href="module-server.html">server</a></li></ul></div>
                     </nav>
                 </div>
             </div>
@@ -82,6 +82,7 @@
       mutation: Mutation
     }
     
+    &quot;&quot;&quot;Represents possible achievement&quot;&quot;&quot;
     type Achievement {
       _id: ID
       name: String
@@ -92,6 +93,7 @@
       name: String!
     }
     
+    &quot;&quot;&quot;Bedroom of a house&quot;&quot;&quot;
     type Bedroom {
       _id: ID
       house_id: ID
@@ -123,6 +125,7 @@
       occupied: Boolean
     }
     
+    &quot;&quot;&quot;Represents house photos&quot;&quot;&quot;
     type BedroomPhoto {
       _id: ID
       url: String
@@ -135,6 +138,7 @@
       bedroom_id: ID!
     }
     
+    &quot;&quot;&quot;Represents possible bill wich could be included to rent&quot;&quot;&quot;
     type Bill {
       _id: ID
       name: String
@@ -145,6 +149,7 @@
       name: String!
     }
     
+    &quot;&quot;&quot;Category of element&quot;&quot;&quot;
     type Category {
       _id: ID
       name: String
@@ -169,13 +174,16 @@
     &quot;&quot;&quot;
     scalar DateTime
     
+    &quot;&quot;&quot;
+    Represents element. Element describes one of characteristics of a house.
+    &quot;&quot;&quot;
     type Element {
       _id: ID
       name: String
       category_id: ID
       element_kind_id: ID
       category(_id: ID): Category
-      elementKind(_id: ID): ElementKind
+      element_kind(_id: ID): ElementKind
       reviewHouseElements(skip: Int, limit: Int): [ReviewHouseElement]
       preferences(skip: Int, limit: Int): [Preference]
     }
@@ -186,6 +194,9 @@
       element_kind_id: ID!
     }
     
+    &quot;&quot;&quot;
+    Represents element type. (used word &quot;kind&quot; instead of &quot;type&quot; because of entity type name collisions)
+    &quot;&quot;&quot;
     type ElementKind {
       _id: ID
       name: String
@@ -201,11 +212,12 @@
       range_to: Int
     }
     
+    &quot;&quot;&quot;Represents possible value of an element type&quot;&quot;&quot;
     type ElementKindValues {
       _id: ID
       element_kind_id: ID
       value: String
-      elementKind(_id: ID): ElementKind
+      element_kind(_id: ID): ElementKind
     }
     
     input ElementKindValuesInput {
@@ -213,14 +225,16 @@
       value: String
     }
     
+    &quot;&quot;&quot;Represents a possible fact about a house&quot;&quot;&quot;
     type Fact {
       _id: ID
       fact_group_id: ID
       name: String
-      factGroup(_id: ID): FactGroup
+      fact_group(_id: ID): FactGroup
       houseFacts(skip: Int, limit: Int): [HouseFact]
     }
     
+    &quot;&quot;&quot;Group of facts&quot;&quot;&quot;
     type FactGroup {
       _id: ID
       name: String
@@ -236,6 +250,7 @@
       name: String!
     }
     
+    &quot;&quot;&quot;Represents a favorite house of a student&quot;&quot;&quot;
     type FavoriteHouse {
       _id: ID
       house_id: ID
@@ -249,6 +264,7 @@
       student_id: ID!
     }
     
+    &quot;&quot;&quot;Represents house&quot;&quot;&quot;
     type House {
       _id: ID
       landlord_id: ID
@@ -270,6 +286,7 @@
       favoriteHouses(skip: Int, limit: Int): [FavoriteHouse]
     }
     
+    &quot;&quot;&quot;Represents a bill included to rent of a house&quot;&quot;&quot;
     type HouseBill {
       _id: ID
       house_id: ID
@@ -283,6 +300,7 @@
       bill_id: ID!
     }
     
+    &quot;&quot;&quot;Represents fact about a house&quot;&quot;&quot;
     type HouseFact {
       _id: ID
       house_id: ID
@@ -308,6 +326,7 @@
       rating: Float
     }
     
+    &quot;&quot;&quot;Represents house photos&quot;&quot;&quot;
     type HousePhoto {
       _id: ID
       url: String
@@ -316,10 +335,11 @@
     }
     
     input HousePhotoInput {
-      url: String!
+      url: Upload!
       house_id: ID!
     }
     
+    &quot;&quot;&quot;For wich university the house is available for search&quot;&quot;&quot;
     type HouseUniversity {
       _id: ID
       house_id: ID
@@ -349,11 +369,10 @@
       contact_name: String
       contact_number: String
       person(_id: ID): Person
-      landlordKind(_id: ID): LandlordKind
+      landlord_kind(_id: ID): LandlordKind
       houses(skip: Int, limit: Int): [House]
     }
     
-    &quot;&quot;&quot;undefined&quot;&quot;&quot;
     input LandlordInput {
       landlord_kind_id: ID
       company_name: String
@@ -364,6 +383,9 @@
       person: PersonInput
     }
     
+    &quot;&quot;&quot;
+    Type of Landlord: 1 - Landlord, 2 - Property Developer, 3 - Letting Agency, 4 - University
+    &quot;&quot;&quot;
     type LandlordKind {
       _id: ID
       name: String
@@ -464,6 +486,7 @@
       deleteFavoriteHouse(_id: ID): FavoriteHouse
     }
     
+    &quot;&quot;&quot;Represents notification of a person&quot;&quot;&quot;
     type Notification {
       _id: ID
       person_id: ID
@@ -504,7 +527,6 @@
       notifications(skip: Int, limit: Int): [Notification]
     }
     
-    &quot;&quot;&quot;undefined&quot;&quot;&quot;
     input PersonInput {
       first_name: String!
       last_name: String
@@ -515,6 +537,7 @@
       updated_at: DateTime
     }
     
+    &quot;&quot;&quot;Represents student`s preferred element&quot;&quot;&quot;
     type Preference {
       _id: ID
       student_id: ID
@@ -530,6 +553,7 @@
       element_weight: Float
     }
     
+    &quot;&quot;&quot;Represents review of a house&quot;&quot;&quot;
     type Review {
       _id: ID
       student_id: ID
@@ -542,6 +566,7 @@
       reviewHouseElements(skip: Int, limit: Int): [ReviewHouseElement]
     }
     
+    &quot;&quot;&quot;Represents an element of review of a house&quot;&quot;&quot;
     type ReviewHouseElement {
       _id: ID
       review_id: ID
@@ -572,7 +597,6 @@
       persons(skip: Int, limit: Int): [Person]
     }
     
-    &quot;&quot;&quot;undefined&quot;&quot;&quot;
     input RoleInput {
       name: String!
     }
@@ -592,52 +616,55 @@
       statuses(skip: Int, limit: Int): [Status]
       landlord(_id: ID): Landlord
       landlords(skip: Int, limit: Int): [Landlord]
-      landlordKind(_id: ID): LandlordKind
-      landlordKinds(skip: Int, limit: Int): [LandlordKind]
+      landlord_kind(_id: ID): LandlordKind
+      landlord_kinds(skip: Int, limit: Int): [LandlordKind]
       house(_id: ID): House
       houses(skip: Int, limit: Int): [House]
-      housePhoto(_id: ID): HousePhoto
-      housePhotos(skip: Int, limit: Int): [HousePhoto]
-      bedroomPhoto(_id: ID): BedroomPhoto
-      bedroomPhotos(skip: Int, limit: Int): [BedroomPhoto]
+      house_photo(_id: ID): HousePhoto
+      house_photos(skip: Int, limit: Int): [HousePhoto]
+      bedroom_photo(_id: ID): BedroomPhoto
+      bedroom_photos(skip: Int, limit: Int): [BedroomPhoto]
       fact(_id: ID): Fact
       facts(skip: Int, limit: Int): [Fact]
-      factGroup(_id: ID): FactGroup
-      factGroups(skip: Int, limit: Int): [FactGroup]
-      houseFact(_id: ID): HouseFact
-      houseFacts(skip: Int, limit: Int): [HouseFact]
-      houseUniversity(_id: ID): HouseUniversity
-      houseUniversities(skip: Int, limit: Int): [HouseUniversity]
+      fact_group(_id: ID): FactGroup
+      fact_groups(skip: Int, limit: Int): [FactGroup]
+      house_fact(_id: ID): HouseFact
+      house_facts(skip: Int, limit: Int): [HouseFact]
+      house_university(_id: ID): HouseUniversity
+      house_universities(skip: Int, limit: Int): [HouseUniversity]
       bedroom(_id: ID): Bedroom
       bedrooms(skip: Int, limit: Int): [Bedroom]
       category(_id: ID): Category
       categories(skip: Int, limit: Int): [Category]
       element(_id: ID): Element
       elements(skip: Int, limit: Int): [Element]
-      elementKind(_id: ID): ElementKind
-      elementKinds(skip: Int, limit: Int): [ElementKind]
-      elementKindValues(_id: ID): ElementKindValues
-      elementKindValueses(skip: Int, limit: Int): [ElementKindValues]
+      element_kind(_id: ID): ElementKind
+      element_kinds(skip: Int, limit: Int): [ElementKind]
+      element_kind_values(_id: ID): ElementKindValues
+      element_kind_valueses(skip: Int, limit: Int): [ElementKindValues]
       preference(_id: ID): Preference
       preferences(skip: Int, limit: Int): [Preference]
       achievement(_id: ID): Achievement
       achievements(skip: Int, limit: Int): [Achievement]
-      studentAchievement(_id: ID): StudentAchievement
-      studentAchievements(skip: Int, limit: Int): [StudentAchievement]
+      student_achievement(_id: ID): StudentAchievement
+      student_achievements(skip: Int, limit: Int): [StudentAchievement]
       review(_id: ID): Review
       reviews(skip: Int, limit: Int): [Review]
-      reviewHouseElement(_id: ID): ReviewHouseElement
-      reviewHouseElements(skip: Int, limit: Int): [ReviewHouseElement]
+      review_house_element(_id: ID): ReviewHouseElement
+      review_house_elements(skip: Int, limit: Int): [ReviewHouseElement]
       notification(_id: ID): Notification
       notifications(skip: Int, limit: Int): [Notification]
       bill(_id: ID): Bill
       bills(skip: Int, limit: Int): [Bill]
-      houseBill(_id: ID): HouseBill
-      houseBills(skip: Int, limit: Int): [HouseBill]
-      favoriteHouse(_id: ID): FavoriteHouse
-      favoriteHouses(skip: Int, limit: Int): [FavoriteHouse]
+      house_bill(_id: ID): HouseBill
+      house_bills(skip: Int, limit: Int): [HouseBill]
+      favorite_house(_id: ID): FavoriteHouse
+      favorite_houses(skip: Int, limit: Int): [FavoriteHouse]
     }
     
+    &quot;&quot;&quot;
+    Represents student status: 1 - Not a Student, 2 - Prospective Student, 3 - Undergraduate Student, 4 - Graduated Student
+    &quot;&quot;&quot;
     type Status {
       _id: ID
       name: String
@@ -664,6 +691,7 @@
       preferences(skip: Int, limit: Int): [Preference]
     }
     
+    &quot;&quot;&quot;Represents an achievement of a student&quot;&quot;&quot;
     type StudentAchievement {
       _id: ID
       student_id: ID
@@ -679,7 +707,6 @@
       created_at: DateTime
     }
     
-    &quot;&quot;&quot;undefined&quot;&quot;&quot;
     input StudentInput {
       university_id: ID
       status_id: ID
@@ -688,6 +715,7 @@
       person: PersonInput
     }
     
+    &quot;&quot;&quot;Represent ticket created by person&quot;&quot;&quot;
     type Ticket {
       _id: ID
       message: String
@@ -717,6 +745,9 @@
       city: String
     }
     
+    &quot;&quot;&quot;The `Upload` scalar type represents a file upload.&quot;&quot;&quot;
+    scalar Upload
+    
 </code></pre>
 </article>
 
@@ -729,7 +760,7 @@
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Mon Sep 16 2019 11:29:22 GMT+0300 (GMT+03:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Mon Sep 16 2019 15:27:33 GMT+0300 (GMT+03:00)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>

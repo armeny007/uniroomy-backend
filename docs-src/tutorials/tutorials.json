@@ -1,4 +1,7 @@
 {
+  "00-usage-examples": {
+    "title": "Usage Examples"
+  },
   "01-database-schema": {
     "title": "UniRoomy Database Schema"
   },

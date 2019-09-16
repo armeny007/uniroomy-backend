@@ -9,6 +9,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       mutation: Mutation
     }
     
+    """Represents possible achievement"""
     type Achievement {
       _id: ID
       name: String
@@ -19,6 +20,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       name: String!
     }
     
+    """Bedroom of a house"""
     type Bedroom {
       _id: ID
       house_id: ID
@@ -50,6 +52,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       occupied: Boolean
     }
     
+    """Represents house photos"""
     type BedroomPhoto {
       _id: ID
       url: String
@@ -62,6 +65,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       bedroom_id: ID!
     }
     
+    """Represents possible bill wich could be included to rent"""
     type Bill {
       _id: ID
       name: String
@@ -72,6 +76,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       name: String!
     }
     
+    """Category of element"""
     type Category {
       _id: ID
       name: String
@@ -96,13 +101,16 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
     """
     scalar DateTime
     
+    """
+    Represents element. Element describes one of characteristics of a house.
+    """
     type Element {
       _id: ID
       name: String
       category_id: ID
       element_kind_id: ID
       category(_id: ID): Category
-      elementKind(_id: ID): ElementKind
+      element_kind(_id: ID): ElementKind
       reviewHouseElements(skip: Int, limit: Int): [ReviewHouseElement]
       preferences(skip: Int, limit: Int): [Preference]
     }
@@ -113,6 +121,9 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       element_kind_id: ID!
     }
     
+    """
+    Represents element type. (used word "kind" instead of "type" because of entity type name collisions)
+    """
     type ElementKind {
       _id: ID
       name: String
@@ -128,11 +139,12 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       range_to: Int
     }
     
+    """Represents possible value of an element type"""
     type ElementKindValues {
       _id: ID
       element_kind_id: ID
       value: String
-      elementKind(_id: ID): ElementKind
+      element_kind(_id: ID): ElementKind
     }
     
     input ElementKindValuesInput {
@@ -140,14 +152,16 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       value: String
     }
     
+    """Represents a possible fact about a house"""
     type Fact {
       _id: ID
       fact_group_id: ID
       name: String
-      factGroup(_id: ID): FactGroup
+      fact_group(_id: ID): FactGroup
       houseFacts(skip: Int, limit: Int): [HouseFact]
     }
     
+    """Group of facts"""
     type FactGroup {
       _id: ID
       name: String
@@ -163,6 +177,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       name: String!
     }
     
+    """Represents a favorite house of a student"""
     type FavoriteHouse {
       _id: ID
       house_id: ID
@@ -176,6 +191,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       student_id: ID!
     }
     
+    """Represents house"""
     type House {
       _id: ID
       landlord_id: ID
@@ -197,6 +213,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       favoriteHouses(skip: Int, limit: Int): [FavoriteHouse]
     }
     
+    """Represents a bill included to rent of a house"""
     type HouseBill {
       _id: ID
       house_id: ID
@@ -210,6 +227,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       bill_id: ID!
     }
     
+    """Represents fact about a house"""
     type HouseFact {
       _id: ID
       house_id: ID
@@ -235,6 +253,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       rating: Float
     }
     
+    """Represents house photos"""
     type HousePhoto {
       _id: ID
       url: String
@@ -243,10 +262,11 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
     }
     
     input HousePhotoInput {
-      url: String!
+      url: Upload!
       house_id: ID!
     }
     
+    """For wich university the house is available for search"""
     type HouseUniversity {
       _id: ID
       house_id: ID
@@ -276,11 +296,10 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       contact_name: String
       contact_number: String
       person(_id: ID): Person
-      landlordKind(_id: ID): LandlordKind
+      landlord_kind(_id: ID): LandlordKind
       houses(skip: Int, limit: Int): [House]
     }
     
-    """undefined"""
     input LandlordInput {
       landlord_kind_id: ID
       company_name: String
@@ -291,6 +310,9 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       person: PersonInput
     }
     
+    """
+    Type of Landlord: 1 - Landlord, 2 - Property Developer, 3 - Letting Agency, 4 - University
+    """
     type LandlordKind {
       _id: ID
       name: String
@@ -391,6 +413,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       deleteFavoriteHouse(_id: ID): FavoriteHouse
     }
     
+    """Represents notification of a person"""
     type Notification {
       _id: ID
       person_id: ID
@@ -431,7 +454,6 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       notifications(skip: Int, limit: Int): [Notification]
     }
     
-    """undefined"""
     input PersonInput {
       first_name: String!
       last_name: String
@@ -442,6 +464,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       updated_at: DateTime
     }
     
+    """Represents student`s preferred element"""
     type Preference {
       _id: ID
       student_id: ID
@@ -457,6 +480,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       element_weight: Float
     }
     
+    """Represents review of a house"""
     type Review {
       _id: ID
       student_id: ID
@@ -469,6 +493,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       reviewHouseElements(skip: Int, limit: Int): [ReviewHouseElement]
     }
     
+    """Represents an element of review of a house"""
     type ReviewHouseElement {
       _id: ID
       review_id: ID
@@ -499,7 +524,6 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       persons(skip: Int, limit: Int): [Person]
     }
     
-    """undefined"""
     input RoleInput {
       name: String!
     }
@@ -519,52 +543,55 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       statuses(skip: Int, limit: Int): [Status]
       landlord(_id: ID): Landlord
       landlords(skip: Int, limit: Int): [Landlord]
-      landlordKind(_id: ID): LandlordKind
-      landlordKinds(skip: Int, limit: Int): [LandlordKind]
+      landlord_kind(_id: ID): LandlordKind
+      landlord_kinds(skip: Int, limit: Int): [LandlordKind]
       house(_id: ID): House
       houses(skip: Int, limit: Int): [House]
-      housePhoto(_id: ID): HousePhoto
-      housePhotos(skip: Int, limit: Int): [HousePhoto]
-      bedroomPhoto(_id: ID): BedroomPhoto
-      bedroomPhotos(skip: Int, limit: Int): [BedroomPhoto]
+      house_photo(_id: ID): HousePhoto
+      house_photos(skip: Int, limit: Int): [HousePhoto]
+      bedroom_photo(_id: ID): BedroomPhoto
+      bedroom_photos(skip: Int, limit: Int): [BedroomPhoto]
       fact(_id: ID): Fact
       facts(skip: Int, limit: Int): [Fact]
-      factGroup(_id: ID): FactGroup
-      factGroups(skip: Int, limit: Int): [FactGroup]
-      houseFact(_id: ID): HouseFact
-      houseFacts(skip: Int, limit: Int): [HouseFact]
-      houseUniversity(_id: ID): HouseUniversity
-      houseUniversities(skip: Int, limit: Int): [HouseUniversity]
+      fact_group(_id: ID): FactGroup
+      fact_groups(skip: Int, limit: Int): [FactGroup]
+      house_fact(_id: ID): HouseFact
+      house_facts(skip: Int, limit: Int): [HouseFact]
+      house_university(_id: ID): HouseUniversity
+      house_universities(skip: Int, limit: Int): [HouseUniversity]
       bedroom(_id: ID): Bedroom
       bedrooms(skip: Int, limit: Int): [Bedroom]
       category(_id: ID): Category
       categories(skip: Int, limit: Int): [Category]
       element(_id: ID): Element
       elements(skip: Int, limit: Int): [Element]
-      elementKind(_id: ID): ElementKind
-      elementKinds(skip: Int, limit: Int): [ElementKind]
-      elementKindValues(_id: ID): ElementKindValues
-      elementKindValueses(skip: Int, limit: Int): [ElementKindValues]
+      element_kind(_id: ID): ElementKind
+      element_kinds(skip: Int, limit: Int): [ElementKind]
+      element_kind_values(_id: ID): ElementKindValues
+      element_kind_valueses(skip: Int, limit: Int): [ElementKindValues]
       preference(_id: ID): Preference
       preferences(skip: Int, limit: Int): [Preference]
       achievement(_id: ID): Achievement
       achievements(skip: Int, limit: Int): [Achievement]
-      studentAchievement(_id: ID): StudentAchievement
-      studentAchievements(skip: Int, limit: Int): [StudentAchievement]
+      student_achievement(_id: ID): StudentAchievement
+      student_achievements(skip: Int, limit: Int): [StudentAchievement]
       review(_id: ID): Review
       reviews(skip: Int, limit: Int): [Review]
-      reviewHouseElement(_id: ID): ReviewHouseElement
-      reviewHouseElements(skip: Int, limit: Int): [ReviewHouseElement]
+      review_house_element(_id: ID): ReviewHouseElement
+      review_house_elements(skip: Int, limit: Int): [ReviewHouseElement]
       notification(_id: ID): Notification
       notifications(skip: Int, limit: Int): [Notification]
       bill(_id: ID): Bill
       bills(skip: Int, limit: Int): [Bill]
-      houseBill(_id: ID): HouseBill
-      houseBills(skip: Int, limit: Int): [HouseBill]
-      favoriteHouse(_id: ID): FavoriteHouse
-      favoriteHouses(skip: Int, limit: Int): [FavoriteHouse]
+      house_bill(_id: ID): HouseBill
+      house_bills(skip: Int, limit: Int): [HouseBill]
+      favorite_house(_id: ID): FavoriteHouse
+      favorite_houses(skip: Int, limit: Int): [FavoriteHouse]
     }
     
+    """
+    Represents student status: 1 - Not a Student, 2 - Prospective Student, 3 - Undergraduate Student, 4 - Graduated Student
+    """
     type Status {
       _id: ID
       name: String
@@ -591,6 +618,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       preferences(skip: Int, limit: Int): [Preference]
     }
     
+    """Represents an achievement of a student"""
     type StudentAchievement {
       _id: ID
       student_id: ID
@@ -606,7 +634,6 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       created_at: DateTime
     }
     
-    """undefined"""
     input StudentInput {
       university_id: ID
       status_id: ID
@@ -615,6 +642,7 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       person: PersonInput
     }
     
+    """Represent ticket created by person"""
     type Ticket {
       _id: ID
       message: String
@@ -643,5 +671,8 @@ Also available along with <a href="http://51.68.206.231:3003/api/graphiql" targe
       name: String!
       city: String
     }
+    
+    """The `Upload` scalar type represents a file upload."""
+    scalar Upload
     
 ```
