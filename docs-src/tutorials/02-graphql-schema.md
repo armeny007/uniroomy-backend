@@ -1,6 +1,6 @@
 ## GrapQL Schema definition.
 
-Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphiql" target="_blank">Visual UniRoomy GraphQL editor</a>
+Also available along with <a href="http://51.68.206.231:3003/api/graphiql" target="_blank">Visual UniRoomy GraphQL editor</a>
 
 
 ```
@@ -28,11 +28,11 @@ Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphi
       weekly_price: Float
       monthly_price: Float
       rating: Float
+      contract_length: Int
       contract_starts: Date
       contract_ends: Date
       occupied: Boolean
       house(_id: ID): House
-      reviewBedrooms(skip: Int, limit: Int): [ReviewBedroom]
       bedroomPhotos(skip: Int, limit: Int): [BedroomPhoto]
     }
     
@@ -44,6 +44,7 @@ Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphi
       weekly_price: Float
       monthly_price: Float
       rating: Float
+      contract_length: Int
       contract_starts: Date
       contract_ends: Date
       occupied: Boolean
@@ -100,11 +101,10 @@ Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphi
       name: String
       category_id: ID
       element_kind_id: ID
-      preference(_id: ID): Preference
       category(_id: ID): Category
       elementKind(_id: ID): ElementKind
       reviewHouseElements(skip: Int, limit: Int): [ReviewHouseElement]
-      reviewBedroomElements(skip: Int, limit: Int): [ReviewBedroomElement]
+      preferences(skip: Int, limit: Int): [Preference]
     }
     
     input ElementInput {
@@ -377,12 +377,6 @@ Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphi
       addReviewHouseElement(input: ReviewHouseElementInput): ReviewHouseElement
       updateReviewHouseElement(_id: ID, input: ReviewHouseElementInput): ReviewHouseElement
       deleteReviewHouseElement(_id: ID): ReviewHouseElement
-      addReviewBedroom(input: ReviewBedroomInput): ReviewBedroom
-      updateReviewBedroom(_id: ID, input: ReviewBedroomInput): ReviewBedroom
-      deleteReviewBedroom(_id: ID): ReviewBedroom
-      addReviewBedroomElement(input: ReviewBedroomElementInput): ReviewBedroomElement
-      updateReviewBedroomElement(_id: ID, input: ReviewBedroomElementInput): ReviewBedroomElement
-      deleteReviewBedroomElement(_id: ID): ReviewBedroomElement
       addNotification(input: NotificationInput): Notification
       updateNotification(_id: ID, input: NotificationInput): Notification
       deleteNotification(_id: ID): Notification
@@ -453,8 +447,8 @@ Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphi
       student_id: ID
       element_id: ID
       element_weight: Float
-      students(skip: Int, limit: Int): [Student]
-      elements(skip: Int, limit: Int): [Element]
+      student(_id: ID): Student
+      element(_id: ID): Element
     }
     
     input PreferenceInput {
@@ -473,38 +467,6 @@ Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphi
       student(_id: ID): Student
       house(_id: ID): House
       reviewHouseElements(skip: Int, limit: Int): [ReviewHouseElement]
-      reviewBedrooms(skip: Int, limit: Int): [ReviewBedroom]
-    }
-    
-    type ReviewBedroom {
-      _id: ID
-      review_id: ID
-      bedroom_id: ID
-      bedroom_rating: Int
-      review(_id: ID): Review
-      bedroom(_id: ID): Bedroom
-      reviewBedroomElements(skip: Int, limit: Int): [ReviewBedroomElement]
-    }
-    
-    type ReviewBedroomElement {
-      _id: ID
-      element_id: ID
-      review_bedroom_id: ID
-      element_rating: String
-      element(_id: ID): Element
-      reviewBedroom(_id: ID): ReviewBedroom
-    }
-    
-    input ReviewBedroomElementInput {
-      element_id: ID!
-      review_bedroom_id: ID!
-      element_rating: String
-    }
-    
-    input ReviewBedroomInput {
-      review_id: ID!
-      bedroom_id: ID!
-      bedroom_rating: Int
     }
     
     type ReviewHouseElement {
@@ -593,10 +555,6 @@ Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphi
       reviews(skip: Int, limit: Int): [Review]
       reviewHouseElement(_id: ID): ReviewHouseElement
       reviewHouseElements(skip: Int, limit: Int): [ReviewHouseElement]
-      reviewBedroom(_id: ID): ReviewBedroom
-      reviewBedrooms(skip: Int, limit: Int): [ReviewBedroom]
-      reviewBedroomElement(_id: ID): ReviewBedroomElement
-      reviewBedroomElements(skip: Int, limit: Int): [ReviewBedroomElement]
       notification(_id: ID): Notification
       notifications(skip: Int, limit: Int): [Notification]
       bill(_id: ID): Bill
@@ -630,6 +588,7 @@ Also available along with <a href="https://uniroomy-backend.herokuapp.com/graphi
       reviews(skip: Int, limit: Int): [Review]
       studentAchievements(skip: Int, limit: Int): [StudentAchievement]
       favoriteHouses(skip: Int, limit: Int): [FavoriteHouse]
+      preferences(skip: Int, limit: Int): [Preference]
     }
     
     type StudentAchievement {
