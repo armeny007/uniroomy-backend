@@ -11,7 +11,7 @@ FusionAuth UniRoomy server: <a href="http://uniroomy.co.uk:9011/admin" target=_b
 
 ## Basic Authentication
 
-For basic authentication (email + password) `/login` endpoint should be used. In case of successful login backend returns { user, token } object. Where "token" is a JWT. Also, "access_token" cookie is initialized with the token during the endpoint call.
+For basic authentication (email + password) `/api/login` endpoint should be used. In case of successful login backend returns { user, token } object. Where "token" is a JWT. Also, "access_token" cookie is initialized with the token during the endpoint call.
 This token should be used to authorize all subsequent API calls. To authorize endpoint call, two methods could be used:
 
 1. Use access_token cookie
@@ -24,9 +24,9 @@ curl -vS -H' Authorization: eyJh...bGciOiJSUzI1NiIsInROHAdwkO-zEA' --insecure "h
 
 ## Facebook Login
 
-To make login with Facebook `/facebook-login` endpoint should be used. As a parameter to the call facebook_access_token should be passed. This token is returned from Facebook API call. As a result of a successful login { user, token } object is returned. The user email, first_name, and other fields are pulled from Facebook's Graph API and returned in "user" object. "token" is the same token returned from `/login` endpoint successful call.
+To make login with Facebook `/api/facebook-login` endpoint should be used. As a parameter to the call facebook_access_token should be passed. This token is returned from Facebook API call. As a result of a successful login { user, token } object is returned. The user email, first_name, and other fields are pulled from Facebook's Graph API and returned in "user" object. "token" is the same token returned from `/api/login` endpoint successful call.
 
-Example of test React application which calls `/facebook-login` endpoint
+Example of test React application which calls `/api/facebook-login` endpoint
 
 ```
 import React from 'react';
@@ -57,12 +57,12 @@ export default App;
 
 To register new user two methods could be used:
 
-1. Call `/register` endpoint
+1. Call `/api/register` endpoint
 2. Call `/api` endpoint with addStudent/addLandlord GraphQL mutation
 
 Both methods create person + student/landlord tuples and FusionAuth user with the corresponding role.
 
-Example of `/register` endpoint calling
+Example of `/api/register` endpoint calling
 
 ```
 curl -vS --insecure -X POST -H "Content-Type: application/json" --data '{"email": "test24@test.test", "password": "A989890879", "first_name": "Jonny", "last_name": "Smith",  "role": "Landlord" }'  "https://localhost:3003/api/register"
