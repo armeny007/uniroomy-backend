@@ -13,5 +13,8 @@
   },
   "04-search-algorithm": {
     "title": "Search Algorithm Description"
+  },
+  "05-authentication": {
+    "title": "Authentication"
   }
 }

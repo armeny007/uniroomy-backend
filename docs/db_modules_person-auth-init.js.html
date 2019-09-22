@@ -1,9 +1,11 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     
     <meta charset="utf-8">
-    <title>JSDoc: mongoose-schema</title>
+    <title>JSDoc: db/modules/person-auth-init.js</title>
 
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -64,137 +66,148 @@
             <div class="column is-9-desktop">
                 <div class="content" id="main-content-wrapper">
                     <header class="page-title">
-                        <p>Module</p>
-                        <h1>mongoose-schema</h1>
+                        <p>Source</p>
+                        <h1>db/modules/person-auth-init.js</h1>
                     </header>
                     
                     
 
 
 
-
-<section>
-
-<header>
     
-        
-            
-        
-    
-</header>
-
-<article>
-    <div class="container-overview">
-    
-        
-            <div class="description"><script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script><p>Mongoose Schema module describes mongoose schemas of UniRoomy backend</p></div>
-        
-
-        
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    
-
-    
-
-    
-
-    
-        <p class="tag-source">
-            <a href="db_modules_mongoose-schema.js.html" class="button">View Source</a>
-            <span>
-                <a href="db_modules_mongoose-schema.js.html">db/modules/mongoose-schema.js</a>, <a href="db_modules_mongoose-schema.js.html#line1">line 1</a>
-            </span>
-        </p>
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-    
-    </div>
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</article>
-
-</section>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/* eslint-disable func-names */
+/**
+ * @module person-auth-init
+ * @description
+ * Module person-auth-init connects mongoose schema with FusionAuth. When new person is
+ * created/updated/removed the same is happened with corresponding user in FusionAuth.
+ */
+const FusionAuth = require('fusionauth-node-client');
+const mongoose = require('mongoose');
+const _ = require('lodash');
+const config = require('../../config.json')[process.env.NODE_ENV || 'development'];
+const { toCamelCase } = require('../../lib/strings');
+
+const client = new FusionAuth.FusionAuthClient(
+  config.fusionauth.apiKey,
+  config.fusionauth.applicationURL,
+);
+
+function errHandler(err) {
+  if (err.errorResponse &amp;&amp; err.errorResponse.fieldErrors) {
+    const fe = err.errorResponse.fieldErrors;
+    throw new Error(Object.keys(fe)
+      // eslint-disable-next-line prefer-template
+      .map(field => `${field}: ` + fe[field].map(el => el.message).join('\n')).join('\n'));
+  }
+  throw err;
+  // console.dir({ err }, { depth: null });
+}
+
+async function getFusionAuthUserByUniRoomyId(_id) {
+  const Person = mongoose.model('Person');
+  const person = await Person.findOne({ _id });
+  console.log({ person });
+  const result = await client.retrieveUserByEmail(person.email);
+  const fusionAuthUser = _.get(result, 'successResponse.user');
+  if (!fusionAuthUser) {
+    throw new Error(`FusionAuth user ${person.email} not found`);
+  }
+  console.log({ fusionAuthUser });
+  return fusionAuthUser;
+}
+
+function initPersonTriggers(PersonSchema) {
+  PersonSchema.pre('save', async function (next) {
+    console.log('Person pre save');
+    let role = this.role_id;
+    switch (role) {
+      case 1: role = 'Student'; break;
+      case 2: role = 'Landlord'; break;
+      default: role = 'Student';
+    }
+    const clientUser = {
+      email: this.email,
+      firstName: this.first_name,
+      lastName: this.last_name,
+      birthday: this.birthday,
+      password: this.password,
+      // imageUrl: user.image_url,
+    };
+
+    const body = {
+      user: clientUser,
+      registration: {
+        applicationId: config.fusionauth.applicationId,
+        roles: [role],
+      },
+    };
+
+    try {
+      const regResult = await client.register(null, body);
+      // console.log({ regResult });
+    }
+    catch (err) {
+      errHandler(err);
+    }
+    // We do not store password in db. Hashed password is stored in FusionAuth
+    this.password = '';
+
+    next();
+  });
+  PersonSchema.pre('findOneAndUpdate', async function (next) {
+    console.log('Person pre update');
+    // eslint-disable-next-line no-underscore-dangle
+    const { _id } = this.getFilter();
+    const update = this.getUpdate();
+    console.log({ _id });
+    console.log({ update });
+
+    try {
+      const fusionAuthUser = await getFusionAuthUserByUniRoomyId(_id);
+      const clientUser = {};
+      // eslint-disable-next-line no-return-assign
+      Object.keys(update).forEach(fieldName => clientUser[toCamelCase(fieldName)] = update[fieldName]);
+
+      const body = {
+        user: clientUser,
+      };
+
+      const updResult = await client.updateUser(fusionAuthUser.id, body);
+      console.log({ updResult });
+    }
+    catch (err) {
+      errHandler(err);
+    }
+    // We do not store password in db. Hashed password is stored in FusionAuth
+    update.password = '';
+    this.setUpdate(update);
+
+    next();
+  });
+  PersonSchema.pre('deleteOne', async function (next) {
+    console.log('Person pre remove');
+    const { _id } = this.getFilter();
+    console.log({ _id });
+
+    try {
+      const fusionAuthUser = await getFusionAuthUserByUniRoomyId(_id);
+      const delResult = await client.deleteUser(fusionAuthUser.id);
+      console.log({ delResult });
+    }
+    catch (err) {
+      errHandler(err);
+    }
+    next();
+  });
+}
+
+module.exports = { initPersonTriggers };
+</code></pre>
+        </article>
+    </section>
 
 
 

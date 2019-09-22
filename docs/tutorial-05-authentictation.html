@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>JSDoc: 05-authentictation</title>
+
+    <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="./build/entry.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+</head>
+
+<body>
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">UniRoomy Backend API Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                 
+                <div class="navbar-menu">
+                    <div class="navbar-end">
+                    
+                        <div class="navbar-item">
+                            <a href="https://github.com/armeny007/uniroomy-backend" target="_blank">GitHub</a>
+                        </div>
+                    
+                        <div class="navbar-item">
+                            <a href="https://uniroomy-backend.herokuapp.com/graphiql" target="_blank">Live GraphQL demo</a>
+                        </div>
+                    
+                    </div>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-algorithm.html">Search Algorithm Description</a></li><li><a href="tutorial-05-authentictation.html">05-authentictation</a></li></ul><h3>Modules</h3><ul><li><a href="module-graphql-schema.html">graphql-schema</a></li><li><a href="module-mongoose-schema.html">mongoose-schema</a></li><li><a href="module-person-auth-init.html">person-auth-init</a></li><li><a href="module-server.html">server</a></li></ul></div>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Tutorial</p>
+                        <h1>05-authentictation</h1>
+                    </header>
+                    
+                    <section>
+
+<header>
+    
+</header>
+
+<article>
+    <h2>Authentication Schema</h2>
+<p>For user authentication, UniRoomy backend part uses the following authentication schema:
+<a href="./auth-schema-01.png" target="_blank"><img src="./auth-schema-01.png"></a></p>
+<h2>FusioAuth</h2>
+<p>FusionAuth is an open-source user management system.
+Documentation: <a href="https://fusionauth.io/docs/v1/tech/getting-started/">https://fusionauth.io/docs/v1/tech/getting-started/</a>
+FusionAuth UniRoomy server: http://uniroomy.co.uk:9011/admin</p>
+<h2>Basic Authentication</h2>
+<p>For basic authentication (email + password) /login endpoint should be used. In case of successful login backend returns { user, token } object. Where &quot;token&quot; is a JWT. Also, &quot;access_token&quot; cookie is initialized with the token during the endpoint call.
+This token should be used to authorize all subsequent API calls. To authorize endpoint call, two methods could be used:</p>
+<ol>
+<li>Use access_token cookie</li>
+<li>Use HTTP header Authorization</li>
+</ol>
+<p>Example of using Authorization header</p>
+<pre class="prettyprint source"><code>curl -vS -H' Authorization: eyJh...
+bGciOiJSUzI1NiIsInROHAdwkO-zEA' --insecure &quot;https://localhost:3003/api/&quot;
+</code></pre>
+<h2>Facebook Login</h2>
+<p>To make login with Facebook /facebook-login endpoint should be used. As a parameter to the call facebook_access_token should be passed. This token is returned from Facebook API call. As a result of a successful login { user, token } object is returned. The user email, first_name, and other fields are pulled from Facebook's Graph API and returned in &quot;user&quot; object. &quot;token&quot; is the same token returned from /login endpoint successful call.</p>
+<p>Example of test React application which calls /facebook-login endpoint</p>
+<pre class="prettyprint source"><code>import React from 'react';
+import FacebookLogin from 'react-facebook-login';
+
+const responseFacebook = async (facebookResponse) => {
+  console.log(facebookResponse);
+  const { accessToken } = facebookResponse;
+  const loginResponse = await fetch(`https://uniroomy.co.uk:3003/api/facebook-login/?facebook_access_token=${accessToken}`)
+  const loginResult = await loginResponse.json();
+  console.log({loginResult});
+}
+
+function App() {
+  return (
+    &lt;FacebookLogin
+      appId=&quot;538794743618570&quot;
+      autoLoad={true}
+      fields=&quot;name,email,birthday,first_name,last_name&quot;
+      callback={responseFacebook} />
+  );
+}
+
+export default App;
+</code></pre>
+<h2>Registration of a new user</h2>
+<p>To register new user two methods could be used:</p>
+<ol>
+<li>Call /register endpoint</li>
+<li>Call /api endpoint with addStudent/addLandlord GraphQL mutation</li>
+</ol>
+<p>Both methods create person + student/landlord tuples and FusionAuth user with the corresponding role.</p>
+<p>Example of /register endpoint calling</p>
+<pre class="prettyprint source"><code>curl -vS --insecure -X POST -H &quot;
+Content-Type: application/json&quot; --data '{&quot;email&quot;: &quot;test24@test.test&quot;, &quot;password&quot;
+: &quot;A989890879&quot;, &quot;first_name&quot;: &quot;Jonny&quot;, &quot;last_name&quot;: &quot;Smith&quot;,  &quot;role&quot;: &quot;Landlor
+d&quot; }'  &quot;https://localhost:3003/api/register&quot;
+</code></pre>
+<p>Example of GraphQL mutation</p>
+<pre class="prettyprint source"><code>mutation {
+  addStudent(input: {
+    university_id: 3
+    person: {
+      first_name: &quot;John&quot;
+      last_name: &quot;Doe&quot;
+      email: &quot;test19@test.test&quot;
+      password: &quot;A12345678&quot;
+    }
+  }) {
+    _id
+  }
+}
+</code></pre>
+</article>
+
+</section>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Sun Sep 22 2019 23:32:09 GMT+0300 (GMT+03:00)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+        </p>
+    </div>
+</footer>
+
+<script src="scripts/app.min.js"></script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,478 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>JSDoc: db/modules/mongoose-schema.js</title>
+
+    <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="./build/entry.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+</head>
+
+<body>
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">UniRoomy Backend API Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                 
+                <div class="navbar-menu">
+                    <div class="navbar-end">
+                    
+                        <div class="navbar-item">
+                            <a href="https://github.com/armeny007/uniroomy-backend" target="_blank">GitHub</a>
+                        </div>
+                    
+                        <div class="navbar-item">
+                            <a href="https://uniroomy-backend.herokuapp.com/graphiql" target="_blank">Live GraphQL demo</a>
+                        </div>
+                    
+                    </div>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-algorithm.html">Search Algorithm Description</a></li><li><a href="tutorial-05-authentication.html">Authentication</a></li></ul><h3>Modules</h3><ul><li><a href="module-graphql-schema.html">graphql-schema</a></li><li><a href="module-mongoose-schema.html">mongoose-schema</a></li><li><a href="module-person-auth-init.html">person-auth-init</a></li><li><a href="module-server.html">server</a></li></ul></div>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Source</p>
+                        <h1>db/modules/mongoose-schema.js</h1>
+                    </header>
+                    
+                    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module mongoose-schema
+ *
+ * @description
+ * Mongoose Schema module describes mongoose schemas of UniRoomy backend
+ *
+ */
+
+const mongoose = require('mongoose');
+const AutoIncrement = require('mongoose-sequence')(mongoose);
+
+const { fkCheck } = require('./foreign-key-helper');
+const { onSchemaCreated } = require('./mongoose-schema-init');
+
+const { Schema } = mongoose;
+
+const UniversitySchema = new Schema({
+  _id: { type: Number },
+  name: { type: String, required: true },
+  city: { type: String },
+}, { _id: false });
+UniversitySchema.plugin(AutoIncrement, { start_seq: 100000, id: 'university_seq', inc_field: '_id' });
+onSchemaCreated('UniversitySchema', UniversitySchema);
+const University = mongoose.model('University', UniversitySchema, 'university');
+
+const PersonSchema = new Schema({
+  _id: { type: Number },
+  first_name: { type: String, required: true },
+  last_name: { type: String },
+  birthday: { type: Date },
+  email: { type: String, required: true },
+  role_id: { type: Number, required: true, validate: { validator: id => fkCheck(Role, id) }  },
+  password: { type: String },
+  is_admin: { type: Boolean },
+  created_at: { type: Date, default: new Date() },
+  updated_at: { type: Date },
+}, { _id: false });
+PersonSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'person_seq', inc_field: '_id' });
+onSchemaCreated('PersonSchema', PersonSchema);
+const Person = mongoose.model('Person', PersonSchema, 'person');
+
+const TicketSchema = new Schema({
+  _id: { type: Number },
+  message: { type: String, required: true },
+  person_id: { type: Number, required: true, validate: { validator: id => fkCheck(Person, id) }  },
+  created_at: { type: Date },
+}, { _id: false });
+TicketSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'ticket_seq', inc_field: '_id' });
+onSchemaCreated('TicketSchema', TicketSchema);
+const Ticket = mongoose.model('Ticket', TicketSchema, 'ticket');
+
+const RoleSchema = new Schema({
+  _id: { type: Number },
+  name: { type: String, required: true },
+}, { _id: false });
+RoleSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'role_seq', inc_field: '_id' });
+onSchemaCreated('RoleSchema', RoleSchema);
+const Role = mongoose.model('Role', RoleSchema, 'role');
+
+const StudentSchema = new Schema({
+  _id: { type: Number, required: true, validate: { validator: id => fkCheck(Person, id) }  },
+  university_id: { type: Number, validate: { validator: id => fkCheck(University, id) }  },
+  status_id: { type: Number, validate: { validator: id => fkCheck(Status, id) }  },
+  verified: { type: Boolean },
+  tokens: { type: Number },
+}, { _id: false });
+onSchemaCreated('StudentSchema', StudentSchema);
+const Student = mongoose.model('Student', StudentSchema, 'student');
+
+const StatusSchema = new Schema({
+  _id: { type: Number },
+  name: { type: String, required: true },
+}, { _id: false });
+StatusSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'status_seq', inc_field: '_id' });
+onSchemaCreated('StatusSchema', StatusSchema);
+const Status = mongoose.model('Status', StatusSchema, 'status');
+
+const LandlordSchema = new Schema({
+  _id: { type: Number, validate: { validator: id => fkCheck(Person, id) }  },
+  landlord_kind_id: { type: Number, validate: { validator: id => fkCheck(LandlordKind, id) }  },
+  company_name: { type: String },
+  responsible_for_houses: { type: Number },
+  responsible_for_beds: { type: Number },
+  contact_name: { type: String },
+  contact_number: { type: String },
+}, { _id: false });
+onSchemaCreated('LandlordSchema', LandlordSchema);
+const Landlord = mongoose.model('Landlord', LandlordSchema, 'landlord');
+
+const LandlordKindSchema = new Schema({
+  _id: { type: Number },
+  name: { type: String, required: true },
+}, { _id: false });
+LandlordKindSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'landlord_kind_seq', inc_field: '_id' });
+onSchemaCreated('LandlordKindSchema', LandlordKindSchema);
+const LandlordKind = mongoose.model('LandlordKind', LandlordKindSchema, 'landlord_kind');
+
+const HouseSchema = new Schema({
+  _id: { type: Number },
+  landlord_id: { type: Number, required: true, validate: { validator: id => fkCheck(Landlord, id) }  },
+  name: { type: String },
+  description: { type: String },
+  city: { type: String },
+  street: { type: String },
+  zip: { type: String },
+  address: { type: String },
+  bathes: { type: Number },
+  rating: { type: Number },
+}, { _id: false });
+HouseSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'house_seq', inc_field: '_id' });
+onSchemaCreated('HouseSchema', HouseSchema);
+const House = mongoose.model('House', HouseSchema, 'house');
+
+const HousePhotoSchema = new Schema({
+  _id: { type: Number },
+  url: { type: String, required: true },
+  house_id: { type: Number, required: true, validate: { validator: id => fkCheck(House, id) }  },
+}, { _id: false });
+HousePhotoSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'house_photo_seq', inc_field: '_id' });
+onSchemaCreated('HousePhotoSchema', HousePhotoSchema);
+const HousePhoto = mongoose.model('HousePhoto', HousePhotoSchema, 'house_photo');
+
+const BedroomPhotoSchema = new Schema({
+  _id: { type: Number },
+  url: { type: String, required: true },
+  bedroom_id: { type: Number, required: true, validate: { validator: id => fkCheck(Bedroom, id) }  },
+}, { _id: false });
+BedroomPhotoSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'bedroom_photo_seq', inc_field: '_id' });
+onSchemaCreated('BedroomPhotoSchema', BedroomPhotoSchema);
+const BedroomPhoto = mongoose.model('BedroomPhoto', BedroomPhotoSchema, 'bedroom_photo');
+
+const FactSchema = new Schema({
+  _id: { type: Number },
+  fact_group_id: { type: Number, required: true, validate: { validator: id => fkCheck(FactGroup, id) }  },
+  name: { type: String, required: true },
+}, { _id: false });
+FactSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'fact_seq', inc_field: '_id' });
+onSchemaCreated('FactSchema', FactSchema);
+const Fact = mongoose.model('Fact', FactSchema, 'fact');
+
+const FactGroupSchema = new Schema({
+  _id: { type: Number },
+  name: { type: String, required: true },
+}, { _id: false });
+FactGroupSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'fact_group_seq', inc_field: '_id' });
+onSchemaCreated('FactGroupSchema', FactGroupSchema);
+const FactGroup = mongoose.model('FactGroup', FactGroupSchema, 'fact_group');
+
+const HouseFactSchema = new Schema({
+  _id: { type: Number },
+  house_id: { type: Number, required: true, validate: { validator: id => fkCheck(House, id) }  },
+  fact_id: { type: Number, required: true, validate: { validator: id => fkCheck(Fact, id) }  },
+}, { _id: false });
+HouseFactSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'house_fact_seq', inc_field: '_id' });
+onSchemaCreated('HouseFactSchema', HouseFactSchema);
+const HouseFact = mongoose.model('HouseFact', HouseFactSchema, 'house_fact');
+
+const HouseUniversitySchema = new Schema({
+  _id: { type: Number },
+  house_id: { type: Number, required: true, validate: { validator: id => fkCheck(House, id) }  },
+  university_id: { type: Number, required: true, validate: { validator: id => fkCheck(University, id) }  },
+  time_by_car: { type: Number },
+  time_by_walk: { type: Number },
+  time_by_bus: { type: Number },
+}, { _id: false });
+HouseUniversitySchema.plugin(AutoIncrement, { start_seq: 100000, id: 'house_university_seq', inc_field: '_id' });
+onSchemaCreated('HouseUniversitySchema', HouseUniversitySchema);
+const HouseUniversity = mongoose.model('HouseUniversity', HouseUniversitySchema, 'house_university');
+
+const BedroomSchema = new Schema({
+  _id: { type: Number },
+  house_id: { type: Number, required: true, validate: { validator: id => fkCheck(House, id) }  },
+  name: { type: String },
+  beds: { type: Number },
+  baths: { type: Number },
+  weekly_price: { type: Number },
+  monthly_price: { type: Number },
+  rating: { type: Number },
+  contract_length: { type: Number },
+  contract_starts: { type: Date },
+  contract_ends: { type: Date },
+  occupied: { type: Boolean },
+}, { _id: false });
+BedroomSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'bedroom_seq', inc_field: '_id' });
+onSchemaCreated('BedroomSchema', BedroomSchema);
+const Bedroom = mongoose.model('Bedroom', BedroomSchema, 'bedroom');
+
+const CategorySchema = new Schema({
+  _id: { type: Number },
+  name: { type: String, required: true },
+}, { _id: false });
+CategorySchema.plugin(AutoIncrement, { start_seq: 100000, id: 'category_seq', inc_field: '_id' });
+onSchemaCreated('CategorySchema', CategorySchema);
+const Category = mongoose.model('Category', CategorySchema, 'category');
+
+const ElementSchema = new Schema({
+  _id: { type: Number },
+  name: { type: String, required: true },
+  category_id: { type: Number, required: true, validate: { validator: id => fkCheck(Category, id) }  },
+  element_kind_id: { type: Number, required: true, validate: { validator: id => fkCheck(ElementKind, id) }  },
+}, { _id: false });
+ElementSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'element_seq', inc_field: '_id' });
+onSchemaCreated('ElementSchema', ElementSchema);
+const Element = mongoose.model('Element', ElementSchema, 'element');
+
+const ElementKindSchema = new Schema({
+  _id: { type: Number, required: true },
+  name: { type: String, required: true },
+  range_from: { type: Number },
+  range_to: { type: Number },
+}, { _id: false });
+ElementKindSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'element_kind_seq', inc_field: '_id' });
+onSchemaCreated('ElementKindSchema', ElementKindSchema);
+const ElementKind = mongoose.model('ElementKind', ElementKindSchema, 'element_kind');
+
+const ElementKindValuesSchema = new Schema({
+  _id: { type: Number, required: true },
+  element_kind_id: { type: Number, required: true, validate: { validator: id => fkCheck(ElementKind, id) }  },
+  value: { type: String },
+}, { _id: false });
+ElementKindValuesSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'element_kind_values_seq', inc_field: '_id' });
+onSchemaCreated('ElementKindValuesSchema', ElementKindValuesSchema);
+const ElementKindValues = mongoose.model('ElementKindValues', ElementKindValuesSchema, 'element_kind_values');
+
+const PreferenceSchema = new Schema({
+  _id: { type: Number },
+  student_id: { type: Number, required: true, validate: { validator: id => fkCheck(Student, id) }  },
+  element_id: { type: Number, required: true, validate: { validator: id => fkCheck(Element, id) }  },
+  element_weight: { type: Number },
+}, { _id: false });
+PreferenceSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'preference_seq', inc_field: '_id' });
+onSchemaCreated('PreferenceSchema', PreferenceSchema);
+const Preference = mongoose.model('Preference', PreferenceSchema, 'preference');
+
+const AchievementSchema = new Schema({
+  _id: { type: Number },
+  name: { type: String, required: true },
+}, { _id: false });
+AchievementSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'achievement_seq', inc_field: '_id' });
+onSchemaCreated('AchievementSchema', AchievementSchema);
+const Achievement = mongoose.model('Achievement', AchievementSchema, 'achievement');
+
+const StudentAchievementSchema = new Schema({
+  _id: { type: Number },
+  student_id: { type: Number, required: true, validate: { validator: id => fkCheck(Student, id) }  },
+  achievement_id: { type: Number, required: true, validate: { validator: id => fkCheck(Achievement, id) }  },
+  created_at: { type: Date },
+}, { _id: false });
+StudentAchievementSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'student_achievement_seq', inc_field: '_id' });
+onSchemaCreated('StudentAchievementSchema', StudentAchievementSchema);
+const StudentAchievement = mongoose.model('StudentAchievement', StudentAchievementSchema, 'student_achievement');
+
+const ReviewSchema = new Schema({
+  _id: { type: Number },
+  student_id: { type: Number, required: true, validate: { validator: id => fkCheck(Student, id) }  },
+  house_id: { type: Number, required: true, validate: { validator: id => fkCheck(House, id) }  },
+  description: { type: String, required: true },
+  house_rating: { type: Number, required: true },
+  created_at: { type: Date, default: new Date() },
+}, { _id: false });
+ReviewSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'review_seq', inc_field: '_id' });
+onSchemaCreated('ReviewSchema', ReviewSchema);
+const Review = mongoose.model('Review', ReviewSchema, 'review');
+
+const ReviewHouseElementSchema = new Schema({
+  _id: { type: Number },
+  review_id: { type: Number, required: true, validate: { validator: id => fkCheck(Review, id) }  },
+  element_id: { type: Number, required: true, validate: { validator: id => fkCheck(Element, id) }  },
+  element_rating: { type: String, required: true },
+}, { _id: false });
+ReviewHouseElementSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'review_house_element_seq', inc_field: '_id' });
+onSchemaCreated('ReviewHouseElementSchema', ReviewHouseElementSchema);
+const ReviewHouseElement = mongoose.model('ReviewHouseElement', ReviewHouseElementSchema, 'review_house_element');
+
+const NotificationSchema = new Schema({
+  _id: { type: Number },
+  person_id: { type: Number, required: true, validate: { validator: id => fkCheck(Person, id) }  },
+  title: { type: String },
+  subtitle: { type: String },
+  full_description: { type: String },
+  action: { type: String },
+  read: { type: Boolean, default: false },
+}, { _id: false });
+NotificationSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'notification_seq', inc_field: '_id' });
+onSchemaCreated('NotificationSchema', NotificationSchema);
+const Notification = mongoose.model('Notification', NotificationSchema, 'notification');
+
+const BillSchema = new Schema({
+  _id: { type: Number },
+  name: { type: String, required: true },
+}, { _id: false });
+BillSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'bill_seq', inc_field: '_id' });
+onSchemaCreated('BillSchema', BillSchema);
+const Bill = mongoose.model('Bill', BillSchema, 'bill');
+
+const HouseBillSchema = new Schema({
+  _id: { type: Number },
+  house_id: { type: Number, required: true, validate: { validator: id => fkCheck(House, id) }  },
+  bill_id: { type: Number, required: true, validate: { validator: id => fkCheck(Bill, id) }  },
+}, { _id: false });
+HouseBillSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'house_bill_seq', inc_field: '_id' });
+onSchemaCreated('HouseBillSchema', HouseBillSchema);
+const HouseBill = mongoose.model('HouseBill', HouseBillSchema, 'house_bill');
+
+const FavoriteHouseSchema = new Schema({
+  _id: { type: Number },
+  house_id: { type: Number, required: true, validate: { validator: id => fkCheck(House, id) }  },
+  student_id: { type: Number, required: true, validate: { validator: id => fkCheck(Student, id) }  },
+}, { _id: false });
+FavoriteHouseSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'favorite_house_seq', inc_field: '_id' });
+onSchemaCreated('FavoriteHouseSchema', FavoriteHouseSchema);
+const FavoriteHouse = mongoose.model('FavoriteHouse', FavoriteHouseSchema, 'favorite_house');
+
+module.exports = {
+  UniversitySchema,
+  PersonSchema,
+  TicketSchema,
+  RoleSchema,
+  StudentSchema,
+  StatusSchema,
+  LandlordSchema,
+  LandlordKindSchema,
+  HouseSchema,
+  HousePhotoSchema,
+  BedroomPhotoSchema,
+  FactSchema,
+  FactGroupSchema,
+  HouseFactSchema,
+  HouseUniversitySchema,
+  BedroomSchema,
+  CategorySchema,
+  ElementSchema,
+  ElementKindSchema,
+  ElementKindValuesSchema,
+  PreferenceSchema,
+  AchievementSchema,
+  StudentAchievementSchema,
+  ReviewSchema,
+  ReviewHouseElementSchema,
+  NotificationSchema,
+  BillSchema,
+  HouseBillSchema,
+  FavoriteHouseSchema,
+  University,
+  Person,
+  Ticket,
+  Role,
+  Student,
+  Status,
+  Landlord,
+  LandlordKind,
+  House,
+  HousePhoto,
+  BedroomPhoto,
+  Fact,
+  FactGroup,
+  HouseFact,
+  HouseUniversity,
+  Bedroom,
+  Category,
+  Element,
+  ElementKind,
+  ElementKindValues,
+  Preference,
+  Achievement,
+  StudentAchievement,
+  Review,
+  ReviewHouseElement,
+  Notification,
+  Bill,
+  HouseBill,
+  FavoriteHouse,
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Sun Sep 22 2019 23:42:37 GMT+0300 (GMT+03:00)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+        </p>
+    </div>
+</footer>
+
+<script src="scripts/app.min.js"></script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
