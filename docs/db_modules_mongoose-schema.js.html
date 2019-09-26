@@ -179,6 +179,7 @@ const HouseSchema = new Schema({
   landlord_id: { type: Number, required: true, validate: { validator: id => fkCheck(Landlord, id) }  },
   name: { type: String },
   description: { type: String },
+  house_kind_id: { type: Number, validate: { validator: id => fkCheck(HouseKind, id) }  },
   city: { type: String },
   street: { type: String },
   zip: { type: String },
@@ -189,6 +190,14 @@ const HouseSchema = new Schema({
 HouseSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'house_seq', inc_field: '_id' });
 onSchemaCreated('HouseSchema', HouseSchema);
 const House = mongoose.model('House', HouseSchema, 'house');
+
+const HouseKindSchema = new Schema({
+  _id: { type: Number },
+  name: { type: String },
+}, { _id: false });
+HouseKindSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'house_kind_seq', inc_field: '_id' });
+onSchemaCreated('HouseKindSchema', HouseKindSchema);
+const HouseKind = mongoose.model('HouseKind', HouseKindSchema, 'house_kind');
 
 const HousePhotoSchema = new Schema({
   _id: { type: Number },
@@ -208,15 +217,6 @@ BedroomPhotoSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'bedroom_photo
 onSchemaCreated('BedroomPhotoSchema', BedroomPhotoSchema);
 const BedroomPhoto = mongoose.model('BedroomPhoto', BedroomPhotoSchema, 'bedroom_photo');
 
-const FactSchema = new Schema({
-  _id: { type: Number },
-  fact_group_id: { type: Number, required: true, validate: { validator: id => fkCheck(FactGroup, id) }  },
-  name: { type: String, required: true },
-}, { _id: false });
-FactSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'fact_seq', inc_field: '_id' });
-onSchemaCreated('FactSchema', FactSchema);
-const Fact = mongoose.model('Fact', FactSchema, 'fact');
-
 const FactGroupSchema = new Schema({
   _id: { type: Number },
   name: { type: String, required: true },
@@ -228,7 +228,7 @@ const FactGroup = mongoose.model('FactGroup', FactGroupSchema, 'fact_group');
 const HouseFactSchema = new Schema({
   _id: { type: Number },
   house_id: { type: Number, required: true, validate: { validator: id => fkCheck(House, id) }  },
-  fact_id: { type: Number, required: true, validate: { validator: id => fkCheck(Fact, id) }  },
+  element_id: { type: Number, required: true, validate: { validator: id => fkCheck(Element, id) }  },
 }, { _id: false });
 HouseFactSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'house_fact_seq', inc_field: '_id' });
 onSchemaCreated('HouseFactSchema', HouseFactSchema);
@@ -238,9 +238,9 @@ const HouseUniversitySchema = new Schema({
   _id: { type: Number },
   house_id: { type: Number, required: true, validate: { validator: id => fkCheck(House, id) }  },
   university_id: { type: Number, required: true, validate: { validator: id => fkCheck(University, id) }  },
-  time_by_car: { type: Number },
-  time_by_walk: { type: Number },
-  time_by_bus: { type: Number },
+  commute_time_by_car: { type: Number },
+  commute_time_by_walk: { type: Number },
+  commute_time_by_bus: { type: Number },
 }, { _id: false });
 HouseUniversitySchema.plugin(AutoIncrement, { start_seq: 100000, id: 'house_university_seq', inc_field: '_id' });
 onSchemaCreated('HouseUniversitySchema', HouseUniversitySchema);
@@ -276,40 +276,25 @@ const ElementSchema = new Schema({
   _id: { type: Number },
   name: { type: String, required: true },
   category_id: { type: Number, required: true, validate: { validator: id => fkCheck(Category, id) }  },
-  element_kind_id: { type: Number, required: true, validate: { validator: id => fkCheck(ElementKind, id) }  },
+  fact_group_id: { type: Number, validate: { validator: id => fkCheck(FactGroup, id) }  },
+  is_fact: { type: Number, default: false },
+  fact_group_sort_order: { type: Number },
+  category_sort_order: { type: Number },
 }, { _id: false });
 ElementSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'element_seq', inc_field: '_id' });
 onSchemaCreated('ElementSchema', ElementSchema);
 const Element = mongoose.model('Element', ElementSchema, 'element');
 
-const ElementKindSchema = new Schema({
-  _id: { type: Number, required: true },
-  name: { type: String, required: true },
-  range_from: { type: Number },
-  range_to: { type: Number },
-}, { _id: false });
-ElementKindSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'element_kind_seq', inc_field: '_id' });
-onSchemaCreated('ElementKindSchema', ElementKindSchema);
-const ElementKind = mongoose.model('ElementKind', ElementKindSchema, 'element_kind');
-
-const ElementKindValuesSchema = new Schema({
-  _id: { type: Number, required: true },
-  element_kind_id: { type: Number, required: true, validate: { validator: id => fkCheck(ElementKind, id) }  },
-  value: { type: String },
-}, { _id: false });
-ElementKindValuesSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'element_kind_values_seq', inc_field: '_id' });
-onSchemaCreated('ElementKindValuesSchema', ElementKindValuesSchema);
-const ElementKindValues = mongoose.model('ElementKindValues', ElementKindValuesSchema, 'element_kind_values');
-
-const PreferenceSchema = new Schema({
+const ElementPreferenceSchema = new Schema({
   _id: { type: Number },
   student_id: { type: Number, required: true, validate: { validator: id => fkCheck(Student, id) }  },
   element_id: { type: Number, required: true, validate: { validator: id => fkCheck(Element, id) }  },
   element_weight: { type: Number },
+  value: { type: Number },
 }, { _id: false });
-PreferenceSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'preference_seq', inc_field: '_id' });
-onSchemaCreated('PreferenceSchema', PreferenceSchema);
-const Preference = mongoose.model('Preference', PreferenceSchema, 'preference');
+ElementPreferenceSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'element_preference_seq', inc_field: '_id' });
+onSchemaCreated('ElementPreferenceSchema', ElementPreferenceSchema);
+const ElementPreference = mongoose.model('ElementPreference', ElementPreferenceSchema, 'element_preference');
 
 const AchievementSchema = new Schema({
   _id: { type: Number },
@@ -346,10 +331,21 @@ const ReviewHouseElementSchema = new Schema({
   review_id: { type: Number, required: true, validate: { validator: id => fkCheck(Review, id) }  },
   element_id: { type: Number, required: true, validate: { validator: id => fkCheck(Element, id) }  },
   element_rating: { type: String, required: true },
+  reviewer_element_weight: { type: Number },
 }, { _id: false });
 ReviewHouseElementSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'review_house_element_seq', inc_field: '_id' });
 onSchemaCreated('ReviewHouseElementSchema', ReviewHouseElementSchema);
 const ReviewHouseElement = mongoose.model('ReviewHouseElement', ReviewHouseElementSchema, 'review_house_element');
+
+const HouseElementSchema = new Schema({
+  _id: { type: Number },
+  element_id: { type: Number, required: true, validate: { validator: id => fkCheck(Element, id) }  },
+  house_id: { type: Number, required: true, validate: { validator: id => fkCheck(House, id) }  },
+  normalized_average_rating: { type: Number },
+}, { _id: false });
+HouseElementSchema.plugin(AutoIncrement, { start_seq: 100000, id: 'house_element_seq', inc_field: '_id' });
+onSchemaCreated('HouseElementSchema', HouseElementSchema);
+const HouseElement = mongoose.model('HouseElement', HouseElementSchema, 'house_element');
 
 const NotificationSchema = new Schema({
   _id: { type: Number },
@@ -400,22 +396,21 @@ module.exports = {
   LandlordSchema,
   LandlordKindSchema,
   HouseSchema,
+  HouseKindSchema,
   HousePhotoSchema,
   BedroomPhotoSchema,
-  FactSchema,
   FactGroupSchema,
   HouseFactSchema,
   HouseUniversitySchema,
   BedroomSchema,
   CategorySchema,
   ElementSchema,
-  ElementKindSchema,
-  ElementKindValuesSchema,
-  PreferenceSchema,
+  ElementPreferenceSchema,
   AchievementSchema,
   StudentAchievementSchema,
   ReviewSchema,
   ReviewHouseElementSchema,
+  HouseElementSchema,
   NotificationSchema,
   BillSchema,
   HouseBillSchema,
@@ -429,22 +424,21 @@ module.exports = {
   Landlord,
   LandlordKind,
   House,
+  HouseKind,
   HousePhoto,
   BedroomPhoto,
-  Fact,
   FactGroup,
   HouseFact,
   HouseUniversity,
   Bedroom,
   Category,
   Element,
-  ElementKind,
-  ElementKindValues,
-  Preference,
+  ElementPreference,
   Achievement,
   StudentAchievement,
   Review,
   ReviewHouseElement,
+  HouseElement,
   Notification,
   Bill,
   HouseBill,
@@ -464,7 +458,7 @@ module.exports = {
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Thu Sep 26 2019 17:57:38 GMT+0300 (GMT+03:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Thu Sep 26 2019 18:32:44 GMT+0300 (GMT+03:00)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
