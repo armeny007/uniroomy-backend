@@ -22,25 +22,25 @@
     "cleverLinks": false,
     "monospaceLinks": false,
     "default": {
-        "staticFiles": {
-          "include": [
-              "./docs-src/img"
-          ]
-        }
+      "staticFiles": {
+        "include": [
+          "./docs-src/img"
+        ]
+      }
     },
     "better-docs": {
-        "name": "UniRoomy Backend API Documentation",
-        "logo": "",
-        "navigation": [
-            {
-                "label": "GitHub",
-                "href": "https://github.com/armeny007/uniroomy-backend"
-            },
-            {
-                "label": "Live GraphQL demo",
-                "href": "https://uniroomy.co.uk:3003/api/graphiql"
-            }
-        ]
+      "name": "UniRoomy Backend API Documentation",
+      "logo": "",
+      "navigation": [
+        {
+          "label": "GitHub",
+          "href": "https://github.com/armeny007/uniroomy-backend"
+        },
+        {
+          "label": "Live GraphQL demo",
+          "href": "https://uniroomy.co.uk:3003/api/graphiql"
+        }
+      ]
     }
-}
+  }
 }

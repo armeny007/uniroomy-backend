@@ -29,7 +29,7 @@ The query returns house list filtered by given criteria and sorted by House Rank
 During the search the House Rank is calculated. Here is the formulae:<br/>
 <br/>
 <br/>
-<a href="./formulae-house-weight.jpg" target="_blank"><img src="./formulae-house-weight.jpg"></a>
+<a href="./formulae-house-weight.png" target="_blank"><img src="./formulae-house-weight.png"></a>
 <br/>
 <br/>
 The search results are sorted by the House Rank
