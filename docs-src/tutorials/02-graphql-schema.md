@@ -1,6 +1,6 @@
 ## GrapQL Schema definition.
 
-Also available along with <a href="http://51.68.206.231:3003/api/graphiql" target="_blank">Visual UniRoomy GraphQL editor</a>
+Also available along with <a href="https://uniroomy.co.uk:3003/api/graphiql" target="_blank">Visual UniRoomy GraphQL editor</a>
 
 
 ```

@@ -38,7 +38,7 @@
             },
             {
                 "label": "Live GraphQL demo",
-                "href": "https://uniroomy-backend.herokuapp.com/graphiql"
+                "href": "https://uniroomy.co.uk:3003/api/graphiql"
             }
         ]
     }
