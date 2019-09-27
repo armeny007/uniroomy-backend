@@ -1,24 +1,21 @@
-Formulae generator: https://www.codecogs.com/latex/eqneditor.php
-
 \\
 Rs_{e,r} - \textit{Reviewer's (reviewer.id=r) Score  of Element (element.id=e) of given House}\\
 \\
-Rp_{e,r} - \textit{Reviewer's (reviewer.id=r) Preference  of Element (element.id=e) of given House}\\
+Rp_{e,r} - \textit{Reviewer's (reviewer.id=r) Preference  of Element (element.id=e)}\\
 \\
-RpRs_{e,r} = max(Rs_{e,r}*Rp_{e,r}; 0.03)- \textit{Product of Reviewer's Score and Reviewer's  Preference of the Element}\\
+Rp^{'}_{e,r} = max(Rp_{e,r}; 0.03)\\
 \\
-RpRsT_{e} = \sum_{r=1}^{n} RpRs_{e,r}\\
+RpT_{e} = \sum_{r=1}^{n} Rp^{'}_{e,r} - \textit{Sum of all Reviewers Preferences of the Element for given House}\\\\
 \\
+RpS_{e,r} = \frac{Rp^{'}_{e,r}}{RpT_{e}} - \textit{Reviewer's Preference Share}\\ 
 \\
-RsS_{e,r} = \frac{RpRs_{e,r}}{RpRsT_{e}} - \textit{Reviewer's Score Share}\\ 
-\\
-RsW_{e,r} = RsS_{e,r} * RsS_{e,r} - \textit{Reviewer's Score Weighted}\\
+RsW_{e,r} = Rs_{e,r} * RpS_{e,r} - \textit{Reviewer's Score Weighted}\\
 \\
 As_{e} = \sum_{r=1}^{n} RsW_{e,r} - \textit{Average Weighted Score of Element of given House}\\ 
 \\
 Sp_{e}  - \textit{Student's Preference of Element}\\
 \\
-Sw_{e} = As_{e}*Sp_{e} - \textit{Student's Preference of Element}\\
+Sw_{e} = As_{e}*Sp_{e} - \textit{Product of Student's Preference of Element and Average Weighted Score of Element}\\
 \\
 Hr = \sum_{e=1}^{m} Sw_{e} - \textit{House Rank based on reviews, reviewers preferences and student's preferences}\\
 \\
