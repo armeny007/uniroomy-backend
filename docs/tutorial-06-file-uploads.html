@@ -1,11 +1,9 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     
     <meta charset="utf-8">
-    <title>JSDoc: server.js</title>
+    <title>JSDoc: File Uploads</title>
 
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -66,124 +64,36 @@
             <div class="column is-9-desktop">
                 <div class="content" id="main-content-wrapper">
                     <header class="page-title">
-                        <p>Source</p>
-                        <h1>server.js</h1>
+                        <p>Tutorial</p>
+                        <h1>File Uploads</h1>
                     </header>
                     
-                    
+                    <section>
 
-
-
+<header>
     
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>/**
- * @module server
- *
- * @description
- * Server module exposes API endpoints using Express.js
- *
- */
+</header>
 
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const { graphqlUploadExpress } = require('graphql-upload');
-require('dotenv').config();
-const expressGraphQL = require('express-graphql');
-const mongoose = require('mongoose');
-const { updateHouseElementsForHouse } = require('./db/modules/house-element-integrity');
-const { prepareMongooseQuery } = require('./db/modules/query-search-houses');
-const { House } = require('./db/modules/mongoose-schema');
-// const { GraphQLInt } = require('graphql');
-
-const app = express();
-// needed to use findOneAndUpdate() function
-mongoose.set('useFindAndModify', false);
-
-const { schema } = require('./db/modules/graphql-schema');
-const authController = require('./controllers/auth-controller');
-
-const connectionString = process.env.MONGODB_CONNECTION_STRING;
-
-mongoose.Promise = global.Promise;
-mongoose.connect(connectionString, { useNewUrlParser: true, useCreateIndex: true })
-  .then(async () => {
-    console.log('Connected to database');
-    // await updateHouseElementsForHouse(31);
-    // const query = prepareMongooseQuery({ university_id: 2, student_id: 1 });
-    // console.dir({ query }, { depth: null });
-    // const houses = await House.aggregate(query).limit(5);
-    // console.log({ houses });
-
-
-    // let st = await Student.find().limit(2);
-    // let pe = await Person.find().limit(2);
-    // console.log({st});
-    // console.log({pe});
-    // const result = await graphql(schema, '{ roles { _id name } }');
-    // console.log({ result });
-  })
-  .catch(err => console.log(`Error: ${err}`));
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use(bodyParser.text({ type: 'application/graphql' }));
-
-const corsOptions = {
-  origin: '*',
-  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204 
-};
-app.use(cors(corsOptions));
-
-app.use(express.static(process.env.PUBLIC_PATH));
-
-app.use('/api/graphiql', expressGraphQL({
-  graphiql: true,
-  schema,
-}));
-
-app.use('/api', authController);
-
-app.use('/api',
-  graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }),
-  expressGraphQL({
-    graphiql: false,
-    schema,
-  }));
-
-app.use((err, req, res, next) => {
-  if (err.status === 404) {
-    return res.status(400).json({ error: 'Error 404. Path not found' });
-  }
-  if (err.status === 500) {
-    return res.status(500).json({ error: 'Error 500. Internal server error' });
-  }
-
-  next();
-});
-
-const port = process.env.PORT || 3003;
-// app.listen(port, () => console.log(`Server is running on port ${port}`));
-
-const options = {
-  key: fs.readFileSync(path.join(process.env.SSL_PATH, 'privkey.pem')),
-  cert: fs.readFileSync(path.join(process.env.SSL_PATH, 'fullchain.pem')),
-};
-
-const server = https.createServer(options, app);
-server.listen(port, () => {
-  console.log(`UniRoomy backend server listening on port ${port}`);
-});
+<article>
+    <h2>Add house_photo using Altair GraphQL client example</h2>
+<p><a href="./example-upload-altair.png" target="_blank"><img src="./example-upload-altair.png"></a></p>
+<h2>add house_photo using curl</h2>
+<pre class="prettyprint source"><code>curl --request POST \
+  --insecure \
+  --url https://uniroomy.co.uk:3003/api/ \
+  --header 'accept: application/json' \
+  --header 'accept-encoding: gzip, deflate, br' \
+  --header 'connection: keep-alive' \
+  --header 'dnt: 1' \
+  --header 'origin: http://uniroomy.co.uk:3003' \
+  --form 'operations={&quot;query&quot;: &quot;mutation ($file: Upload!){ addHousePhoto(input: {house_id: 2, url: $file}){ _id url house_id } }&quot;,   &quot;variables&quot;: { &quot;file&quot;: null } }' \
+  --form 'map={ &quot;nFile&quot;: [&quot;variables.file&quot;] }' \
+  --form nFile=@/xxx/yyy/zzz.png
 </code></pre>
-        </article>
-    </section>
+<p>Replace /xxx/yyy/zzz.png with a file path</p>
+</article>
 
-
-
+</section>
 
                 </div>
             </div>

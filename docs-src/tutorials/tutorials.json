@@ -16,5 +16,8 @@
   },
   "05-authentication": {
     "title": "Authentication"
+  },
+  "06-file-uploads": {
+    "title": "File Uploads"
   }
 }

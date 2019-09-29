@@ -59,7 +59,7 @@
             <div class="column is-3" id="sidebarNav">
                 <div class="sidebar">
                     <nav>
-                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-houses.html">Search Description</a></li><li><a href="tutorial-05-authentication.html">Authentication</a></li></ul><h3>Modules</h3><ul><li><a href="module-graphql-schema.html">graphql-schema</a></li><li><a href="module-mongoose-schema.html">mongoose-schema</a></li><li><a href="module-person-auth-init.html">person-auth-init</a></li><li><a href="module-server.html">server</a></li></ul></div>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-houses.html">Search Description</a></li><li><a href="tutorial-05-authentication.html">Authentication</a></li><li><a href="tutorial-06-file-uploads.html">File Uploads</a></li></ul><h3>Modules</h3><ul><li><a href="module-graphql-schema.html">graphql-schema</a></li><li><a href="module-mongoose-schema.html">mongoose-schema</a></li><li><a href="module-person-auth-init.html">person-auth-init</a></li><li><a href="module-server.html">server</a></li></ul></div>
                     </nav>
                 </div>
             </div>
@@ -87,6 +87,10 @@
  * 
  */
 
+const fs = require('fs');
+const path = require('path');
+const uuidv4 = require('uuid/v4');
+
 const {
   GraphQLSchema,
   GraphQLObjectType,
@@ -111,6 +115,10 @@ const { GraphQLUpload } = require('graphql-upload');
 const { prepareQueryFields, prepareMutationFields } = require('./graphql-schema-init');
 
 const maxReturnedRows = parseInt(process.env.MAX_RETURNED_ROWS, 10) || 50;
+
+function getUrlFileName(url) {
+  return url.split('/').pop().split('#')[0].split('?')[0];
+}
 
 const {
   University,
@@ -738,7 +746,7 @@ const HousePhotoInput = new GraphQLInputObjectType({
 
 const BedroomPhotoType = new GraphQLObjectType({
   name: 'BedroomPhoto',
-  description: 'Represents house photos',
+  description: 'Represents bedroom photos',
   fields: () => ({
     _id: { type: GraphQLInt  },
     url: { type: GraphQLString  },
@@ -759,7 +767,7 @@ const BedroomPhotoInput = new GraphQLInputObjectType({
   name: 'BedroomPhotoInput',
   description: '',
   fields: {
-    url: { type: new GraphQLNonNull(GraphQLString)  },
+    url: { type: new GraphQLNonNull(GraphQLUpload)  },
     bedroom_id: { type: new GraphQLNonNull(GraphQLInt)  },
   }
 });
@@ -2039,6 +2047,39 @@ const mutationFields = {
     type: HousePhotoType,
     args: { input: {type: HousePhotoInput } },
     async resolve(parent, args) {
+      for (const field of ["url"]) {
+        if (!args.input[field]) {
+          continue;
+        }
+        const inputFile = args.input[field];
+        const { filename, mimetype, createReadStream } = await inputFile;
+        console.log({ filename });
+        console.log({ mimetype });
+        const source = createReadStream();
+        const uuid = uuidv4();
+        const storeFileName = uuid + '-' + filename;
+        const destFilePath = path.join(process.env.UPLOAD_PATH, storeFileName);
+        console.log({ destFilePath });
+        const dest = fs.createWriteStream(destFilePath);
+      
+        await new Promise((resolve, reject) => {
+          source.on('open', () => {
+            console.log('on open');
+            source.pipe(dest);
+          });
+          source.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('finish', () => {
+            console.log('on finish');
+            resolve();
+          });
+        });
+        args.input[field] = process.env.UPLOAD_URL + storeFileName;
+      }
       return await HousePhoto.create(args.input);
     }
   },
@@ -2047,6 +2088,39 @@ const mutationFields = {
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
     input: { type: GraphQLNonNull(HousePhotoInput) },  },
     async resolve(parent, args) {
+      for (const field of ["url"]) {
+        if (!args.input[field]) {
+          continue;
+        }
+        const inputFile = args.input[field];
+        const { filename, mimetype, createReadStream } = await inputFile;
+        console.log({ filename });
+        console.log({ mimetype });
+        const source = createReadStream();
+        const uuid = uuidv4();
+        const storeFileName = uuid + '-' + filename;
+        const destFilePath = path.join(process.env.UPLOAD_PATH, storeFileName);
+        console.log({ destFilePath });
+        const dest = fs.createWriteStream(destFilePath);
+      
+        await new Promise((resolve, reject) => {
+          source.on('open', () => {
+            console.log('on open');
+            source.pipe(dest);
+          });
+          source.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('finish', () => {
+            console.log('on finish');
+            resolve();
+          });
+        });
+        args.input[field] = process.env.UPLOAD_URL + storeFileName;
+      }
       return await HousePhoto.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
   },
@@ -2054,6 +2128,14 @@ const mutationFields = {
     type: GraphQLBoolean,
     args: { _id: { type: GraphQLInt }, },
     async resolve(parent, args) {
+      for (const field of ["url"]) {
+        const housePhoto = await HousePhoto.findOne({ _id: args._id });
+        if (housePhoto) {
+          const fileName = getUrlFileName(housePhoto[field]);
+          const filePath = path.join(process.env.UPLOAD_PATH, fileName);
+          fs.unlink(filePath, err => {console.log(err)});
+        }
+      }
       const result = await HousePhoto.deleteOne({ _id: args._id });
       return result ? !!result.deletedCount : null
     }
@@ -2062,6 +2144,39 @@ const mutationFields = {
     type: BedroomPhotoType,
     args: { input: {type: BedroomPhotoInput } },
     async resolve(parent, args) {
+      for (const field of ["url"]) {
+        if (!args.input[field]) {
+          continue;
+        }
+        const inputFile = args.input[field];
+        const { filename, mimetype, createReadStream } = await inputFile;
+        console.log({ filename });
+        console.log({ mimetype });
+        const source = createReadStream();
+        const uuid = uuidv4();
+        const storeFileName = uuid + '-' + filename;
+        const destFilePath = path.join(process.env.UPLOAD_PATH, storeFileName);
+        console.log({ destFilePath });
+        const dest = fs.createWriteStream(destFilePath);
+      
+        await new Promise((resolve, reject) => {
+          source.on('open', () => {
+            console.log('on open');
+            source.pipe(dest);
+          });
+          source.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('finish', () => {
+            console.log('on finish');
+            resolve();
+          });
+        });
+        args.input[field] = process.env.UPLOAD_URL + storeFileName;
+      }
       return await BedroomPhoto.create(args.input);
     }
   },
@@ -2070,6 +2185,39 @@ const mutationFields = {
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
     input: { type: GraphQLNonNull(BedroomPhotoInput) },  },
     async resolve(parent, args) {
+      for (const field of ["url"]) {
+        if (!args.input[field]) {
+          continue;
+        }
+        const inputFile = args.input[field];
+        const { filename, mimetype, createReadStream } = await inputFile;
+        console.log({ filename });
+        console.log({ mimetype });
+        const source = createReadStream();
+        const uuid = uuidv4();
+        const storeFileName = uuid + '-' + filename;
+        const destFilePath = path.join(process.env.UPLOAD_PATH, storeFileName);
+        console.log({ destFilePath });
+        const dest = fs.createWriteStream(destFilePath);
+      
+        await new Promise((resolve, reject) => {
+          source.on('open', () => {
+            console.log('on open');
+            source.pipe(dest);
+          });
+          source.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('finish', () => {
+            console.log('on finish');
+            resolve();
+          });
+        });
+        args.input[field] = process.env.UPLOAD_URL + storeFileName;
+      }
       return await BedroomPhoto.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
   },
@@ -2077,6 +2225,14 @@ const mutationFields = {
     type: GraphQLBoolean,
     args: { _id: { type: GraphQLInt }, },
     async resolve(parent, args) {
+      for (const field of ["url"]) {
+        const bedroomPhoto = await BedroomPhoto.findOne({ _id: args._id });
+        if (bedroomPhoto) {
+          const fileName = getUrlFileName(bedroomPhoto[field]);
+          const filePath = path.join(process.env.UPLOAD_PATH, fileName);
+          fs.unlink(filePath, err => {console.log(err)});
+        }
+      }
       const result = await BedroomPhoto.deleteOne({ _id: args._id });
       return result ? !!result.deletedCount : null
     }
@@ -2512,7 +2668,7 @@ module.exports = { schema };
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Sat Sep 28 2019 00:41:45 GMT+0300 (GMT+03:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Sun Sep 29 2019 22:58:04 GMT+0300 (GMT+03:00)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
