@@ -30,7 +30,7 @@ To make login with Facebook `/api/facebook-login` endpoint should be used. As a 
 
 To make login with Google `/api/google-login` endpoint should be used. As a parameter to the call google_token_id should be passed. This token id is returned from google API call. As a result of a successful login { user, token } object is returned. The user email, first_name, and other fields are pulled from Google OAuth Token Info API and returned in "user" object. "token" is the same token returned from `/api/login` endpoint successful call.
 
-Example of test React application which calls `/api/facebook-login` /api/google-login endpoint
+Example of test React application which calls `/api/facebook-login` and `/api/google-login` endpoints
 
 ```
 import React from 'react';
