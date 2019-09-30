@@ -26,27 +26,57 @@ curl -vS -H' Authorization: eyJh...bGciOiJSUzI1NiIsInROHAdwkO-zEA' --insecure "h
 
 To make login with Facebook `/api/facebook-login` endpoint should be used. As a parameter to the call facebook_access_token should be passed. This token is returned from Facebook API call. As a result of a successful login { user, token } object is returned. The user email, first_name, and other fields are pulled from Facebook's Graph API and returned in "user" object. "token" is the same token returned from `/api/login` endpoint successful call.
 
-Example of test React application which calls `/api/facebook-login` endpoint
+## Google Login
+
+To make login with Google `/api/google-login` endpoint should be used. As a parameter to the call google_token_id should be passed. This token id is returned from google API call. As a result of a successful login { user, token } object is returned. The user email, first_name, and other fields are pulled from Google OAuth Token Info API and returned in "user" object. "token" is the same token returned from `/api/login` endpoint successful call.
+
+Example of test React application which calls `/api/facebook-login` /api/google-login endpoint
 
 ```
 import React from 'react';
 import FacebookLogin from 'react-facebook-login';
+import GoogleLogin from 'react-google-login';
 
 const responseFacebook = async (facebookResponse) => {
   console.log(facebookResponse);
   const { accessToken } = facebookResponse;
   const loginResponse = await fetch(`https://uniroomy.co.uk:3003/api/facebook-login/?facebook_access_token=${accessToken}`)
   const loginResult = await loginResponse.json();
-  console.log({loginResult});
+  console.log({ loginResult });
 }
+
+const responseGoogle = async (googleResponse) => {
+  console.log({googleResponse});
+  const { accessToken, tokenId } = googleResponse;
+  try {
+    const loginResponse = await fetch(`https://uniroomy.co.uk:3003/api/google-login/?google_token_id=${tokenId}`);
+    const loginResult = await loginResponse.json();
+    console.log({ loginResult });
+  }
+  catch (err) {
+    console.log({err});
+  }
+}
+
 
 function App() {
   return (
-    <FacebookLogin
-      appId="538794743618570"
-      autoLoad={true}
-      fields="name,email,birthday,first_name,last_name"
-      callback={responseFacebook} />
+    <div>
+      <FacebookLogin
+        appId="538794743618570"
+        autoLoad={true}
+        fields="name,email,birthday,first_name,last_name"
+        // onClick={componentClicked}
+        callback={responseFacebook} />
+      <p />
+      <GoogleLogin
+        clientId="709112406460-5287iostb34n6mphd8su8r1g1mbh13ci.apps.googleusercontent.com"
+        buttonText="Login with Google"
+        onSuccess={responseGoogle}
+        onFailure={responseGoogle}
+        cookiePolicy={'single_host_origin'}
+      />
+    </div>
   );
 }
 
