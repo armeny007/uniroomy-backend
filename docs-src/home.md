@@ -12,7 +12,7 @@
 | GET        | /api/facebook-login     | Login/Register user with Facebook                            | { facebook_access_token: string }                 |  {<br/>user: object,<br/> token: string<br/>}      |
 | GET        | /api/google-login     | Login/Register user with Google                            | { google_token_id: string }                 |  {<br/>user: object,<br/> token: string<br/>}      |
 | GET        | /api/logout             | Logout user                                         | { access_token: string }  |  -      |
-| POST       | /api/register           | Register a new user using email + password  | {<br/> email: string,<br/> password: string,<br/> role: string<br/> // "Student" \| "Landlord"<br/> } |  {<br/>user: object,<br/> token: string<br/>}      |
+| POST       | /api/register           | Register a new user using email + password  | {<br/> email: string,<br/> password: string,<br/> first_name: string,<br/> // [optional]<br/><br/> last_name: string,<br/> // [optional]<br/><br/> role: string<br/> // [optional] "Student" \| "Landlord"<br/> } |  {<br/>user: object,<br/> token: string<br/>}      |
 
 ## Visual UniRoomy GraphQL builder
 
