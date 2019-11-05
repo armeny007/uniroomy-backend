@@ -77,7 +77,9 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>/* eslint-disable func-names */
+            <pre class="prettyprint source linenums"><code>/* eslint-disable no-underscore-dangle */
+/* eslint-disable no-use-before-define */
+/* eslint-disable func-names */
 /**
  * @module person-auth-init
  * @description
@@ -88,7 +90,7 @@ const FusionAuth = require('fusionauth-node-client');
 const mongoose = require('mongoose');
 const _ = require('lodash');
 const config = require('../../config.json')[process.env.NODE_ENV || 'development'];
-const { toCamelCase } = require('../../lib/strings');
+const { toCamelCase, toPascalCase } = require('../../lib/strings');
 
 const client = new FusionAuth.FusionAuthClient(
   config.fusionauth.apiKey,
@@ -96,6 +98,7 @@ const client = new FusionAuth.FusionAuthClient(
 );
 
 function errHandler(err) {
+  console.dir({ err }, { depth: null });
   if (err.errorResponse &amp;&amp; err.errorResponse.fieldErrors) {
     const fe = err.errorResponse.fieldErrors;
     throw new Error(Object.keys(fe)
@@ -103,20 +106,51 @@ function errHandler(err) {
       .map(field => `${field}: ` + fe[field].map(el => el.message).join('\n')).join('\n'));
   }
   throw err;
-  // console.dir({ err }, { depth: null });
 }
 
-async function getFusionAuthUserByUniRoomyId(_id) {
-  const Person = mongoose.model('Person');
-  const person = await Person.findOne({ _id });
-  console.log({ person });
-  const result = await client.retrieveUserByEmail(person.email);
-  const fusionAuthUser = _.get(result, 'successResponse.user');
-  if (!fusionAuthUser) {
-    throw new Error(`FusionAuth user ${person.email} not found`);
+async function getFusionAuthUserByUniRoomyFilter(filter) {
+  const person = await getPersonByFilter(filter);
+  let email = null;
+  if (person &amp;&amp; person.email) {
+    email = person.email;
   }
-  console.log({ fusionAuthUser });
-  return fusionAuthUser;
+  else {
+    email = filter.email;
+  }
+  if (email) {
+    let result = null;
+    try {
+      result = await client.retrieveUserByEmail(email);
+    }
+    catch (err) {
+      if (err.statusCode !== 404) {
+        throw err;
+      }
+    }
+    const fusionAuthUser = _.get(result, 'successResponse.user');
+    if (!fusionAuthUser) {
+      console.log(`FusionAuth user ${email} not found`);
+      // throw new Error(`FusionAuth user ${person.email} not found`);
+    }
+    console.log({ fusionAuthUser });
+    return fusionAuthUser;
+  }
+  return null;
+}
+
+async function getPersonByFilter(filter) {
+  const Person = mongoose.model('Person');
+  const person = await Person.findOne(filter);
+  console.log({ person });
+  return person;
+}
+
+function initPersonCalculatedFields(PersonSchema) {
+  PersonSchema.virtual('full_name').get(function () {
+    return [this.first_name, this.middle_name, this.last_name]
+      .filter(el => !!el)
+      .join(' ');
+  });
 }
 
 function initPersonTriggers(PersonSchema) {
@@ -134,6 +168,7 @@ function initPersonTriggers(PersonSchema) {
       lastName: this.last_name,
       birthday: this.birthday,
       password: this.password,
+      // data: { person_id: this._id },
       // imageUrl: user.image_url,
     };
 
@@ -151,7 +186,8 @@ function initPersonTriggers(PersonSchema) {
       console.log({ regResult });
     }
     catch (err) {
-      console.log({err});
+      console.log('Error FusionAuth user registration');
+      console.log({ err });
       errHandler(err);
     }
     // We do not store password in db. Hashed password is stored in FusionAuth
@@ -159,16 +195,38 @@ function initPersonTriggers(PersonSchema) {
 
     next();
   });
+  // PersonSchema.post('save', async (person) => {
+  //   console.log('Person post save');
+  //   console.log({ person });
+  //   const clientUser = {
+  //     email: person.email,
+  //     data: { person_id: person._id },
+  //   };
+  //   const body = {
+  //     user: clientUser,
+  //   };
+  //   try {
+  //     const fusionAuthUser = await getFusionAuthUserByUniRoomyFilter({ email: person.email });
+  //     console.dir({ body }, { depth: null });
+  //     const updateResult = await client.updateUser(fusionAuthUser.id, body);
+  //     console.log({ updateResult });
+  //   }
+  //   catch (err) {
+  //     console.log('Error FusionAuth user update');
+  //     console.log({ err });
+  //     errHandler(err);
+  //   }
+  // });
   PersonSchema.pre('findOneAndUpdate', async function (next) {
     console.log('Person pre update');
     // eslint-disable-next-line no-underscore-dangle
-    const { _id } = this.getFilter();
+    const filter = this.getFilter();
     const update = this.getUpdate();
-    console.log({ _id });
+    console.log({ filter });
     console.log({ update });
 
     try {
-      const fusionAuthUser = await getFusionAuthUserByUniRoomyId(_id);
+      const fusionAuthUser = await getFusionAuthUserByUniRoomyFilter(filter);
       const clientUser = {};
       // eslint-disable-next-line no-return-assign
       Object.keys(update).forEach(fieldName => clientUser[toCamelCase(fieldName)] = update[fieldName]);
@@ -191,13 +249,24 @@ function initPersonTriggers(PersonSchema) {
   });
   PersonSchema.pre('deleteOne', async function (next) {
     console.log('Person pre remove');
-    const { _id } = this.getFilter();
-    console.log({ _id });
-
+    const filter = this.getFilter();
+    console.log({ filter });
     try {
-      const fusionAuthUser = await getFusionAuthUserByUniRoomyId(_id);
-      const delResult = await client.deleteUser(fusionAuthUser.id);
-      console.log({ delResult });
+      const person = await getPersonByFilter(filter);
+      const fusionAuthUser = await getFusionAuthUserByUniRoomyFilter(filter);
+      if (fusionAuthUser) {
+        const delResult = await client.deleteUser(fusionAuthUser.id);
+        console.log({ delResult });
+      }
+      if (person &amp;&amp; person.role_id) {
+        const role = await mongoose.model('Role').findById(person.role_id);
+        if (!role) {
+          throw new Error(`No role with id ${person.role_id} found`);
+        }
+        console.log({ role });
+        const successor = mongoose.model(toPascalCase(role.name));
+        await successor.deleteOne({ _id: person._id });
+      }
     }
     catch (err) {
       errHandler(err);
@@ -206,7 +275,7 @@ function initPersonTriggers(PersonSchema) {
   });
 }
 
-module.exports = { initPersonTriggers };
+module.exports = { initPersonTriggers, initPersonCalculatedFields };
 </code></pre>
         </article>
     </section>
@@ -221,7 +290,7 @@ module.exports = { initPersonTriggers };
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Sun Oct 27 2019 18:47:47 GMT+0300 (GMT+03:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri Nov 01 2019 01:07:12 GMT+0300 (GMT+03:00)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
