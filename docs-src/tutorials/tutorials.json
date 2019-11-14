@@ -14,8 +14,11 @@
   "04-search-houses": {
     "title": "Search Description"
   },
-  "05-authentication": {
-    "title": "Authentication"
+  "05-1-authentication": {
+    "title": "Login and Register"
+  },
+  "05-2-verify-uni-email": {
+    "title": "Verify university email"
   },
   "06-file-uploads": {
     "title": "File Uploads"

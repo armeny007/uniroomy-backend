@@ -59,7 +59,7 @@
             <div class="column is-3" id="sidebarNav">
                 <div class="sidebar">
                     <nav>
-                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-houses.html">Search Description</a></li><li><a href="tutorial-05-authentication.html">Authentication</a></li><li><a href="tutorial-06-file-uploads.html">File Uploads</a></li></ul><h3>Modules</h3><ul><li><a href="module-graphql-schema.html">graphql-schema</a></li><li><a href="module-mongoose-schema.html">mongoose-schema</a></li><li><a href="module-person-auth-init.html">person-auth-init</a></li><li><a href="module-server.html">server</a></li></ul></div>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-houses.html">Search Description</a></li><li><a href="tutorial-05-1-authentication.html">Login and Register</a></li><li><a href="tutorial-05-2-verify-uni-email.html">Verify university email</a></li><li><a href="tutorial-06-file-uploads.html">File Uploads</a></li></ul><h3>Modules</h3><ul><li><a href="module-graphql-schema.html">graphql-schema</a></li><li><a href="module-mongoose-schema.html">mongoose-schema</a></li><li><a href="module-person-auth-init.html">person-auth-init</a></li><li><a href="module-server.html">server</a></li></ul></div>
                     </nav>
                 </div>
             </div>
@@ -88,91 +88,7 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const { graphqlUploadExpress } = require('graphql-upload');
-require('dotenv').config();
-const expressGraphQL = require('express-graphql');
-const mongoose = require('mongoose');
-// const { updateHouseElementsForHouse } = require('./db/modules/house-element-integrity');
-// const { prepareMongooseQuery } = require('./db/modules/query-search-houses');
-// const { House } = require('./db/modules/mongoose-schema');
-// const { GraphQLInt } = require('graphql');
-
-const app = express();
-// needed to use findOneAndUpdate() function
-mongoose.set('useFindAndModify', false);
-
-// const { graphql } = require('graphql');
-const { schema } = require('./db/modules/graphql-schema');
-const authController = require('./controllers/auth-controller');
-
-const connectionString = process.env.MONGODB_CONNECTION_STRING;
-mongoose.Promise = global.Promise;
-mongoose.connect(connectionString, { useNewUrlParser: true, useCreateIndex: true })
-  .then(async () => {
-    console.log('Connected to database');
-    // await updateHouseElementsForHouse(31);
-    // const query = prepareMongooseQuery({ university_id: 2, student_id: 1 });
-    // console.dir({ query }, { depth: null });
-    // const houses = await House.aggregate(query).limit(5);
-    // console.log({ houses });
-
-
-    // let st = await Student.find().limit(2);
-    // let pe = await Person.find().limit(2);
-    // console.log({st});
-    // console.log({pe});
-    // const result = await graphql(schema, '{ roles { _id name } }');
-    // console.log({ result });
-  })
-  .catch(err => console.log(`Error: ${err}`));
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-  bodyParser.json()(req, res, err => {
-    if (err) {
-      console.error(err);
-      res.status(400).json(err); // Bad request
-    }
-    next();
-  });
-});
-app.use(bodyParser.text({ type: 'application/graphql' }));
-
-const corsOptions = {
-  origin: '*',
-  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204 
-};
-app.use(cors(corsOptions));
-
-app.use(express.static(process.env.PUBLIC_PATH));
-
-app.use('/api/graphiql', expressGraphQL({
-  graphiql: true,
-  schema,
-}));
-
-app.use('/api', authController);
-
-app.use('/api',
-  graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }),
-  expressGraphQL({
-    graphiql: false,
-    schema,
-  }));
-
-app.use((err, req, res, next) => {
-  if (err.status === 404) {
-    return res.status(400).json({ error: 'Error 404. Path not found' });
-  }
-  if (err.status === 500) {
-    return res.status(500).json({ error: 'Error 500. Internal server error' });
-  }
-
-  next();
-});
+const { app } = require('./app');
 
 const port = process.env.PORT || 3003;
 // app.listen(port, () => console.log(`Server is running on port ${port}`));
@@ -199,7 +115,7 @@ server.listen(port, () => {
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri Nov 01 2019 01:07:12 GMT+0300 (GMT+03:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Thu Nov 14 2019 19:24:49 GMT+0300 (Москва, стандартное время)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>

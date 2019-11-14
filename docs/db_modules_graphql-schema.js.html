@@ -59,7 +59,7 @@
             <div class="column is-3" id="sidebarNav">
                 <div class="sidebar">
                     <nav>
-                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-houses.html">Search Description</a></li><li><a href="tutorial-05-authentication.html">Authentication</a></li><li><a href="tutorial-06-file-uploads.html">File Uploads</a></li></ul><h3>Modules</h3><ul><li><a href="module-graphql-schema.html">graphql-schema</a></li><li><a href="module-mongoose-schema.html">mongoose-schema</a></li><li><a href="module-person-auth-init.html">person-auth-init</a></li><li><a href="module-server.html">server</a></li></ul></div>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-00-usage-examples.html">Usage Examples</a></li><li><a href="tutorial-01-database-schema.html">UniRoomy Database Schema</a></li><li><a href="tutorial-02-graphql-schema.html">UniRoomy GraphQL Schema</a></li><li><a href="tutorial-03-howtorun-instructions.html">How To Run Instructions</a></li><li><a href="tutorial-04-search-houses.html">Search Description</a></li><li><a href="tutorial-05-1-authentication.html">Login and Register</a></li><li><a href="tutorial-05-2-verify-uni-email.html">Verify university email</a></li><li><a href="tutorial-06-file-uploads.html">File Uploads</a></li></ul><h3>Modules</h3><ul><li><a href="module-graphql-schema.html">graphql-schema</a></li><li><a href="module-mongoose-schema.html">mongoose-schema</a></li><li><a href="module-person-auth-init.html">person-auth-init</a></li><li><a href="module-server.html">server</a></li></ul></div>
                     </nav>
                 </div>
             </div>
@@ -162,7 +162,7 @@ const UniversityType = new GraphQLObjectType({
     houseUniversities: {
       type: new GraphQLList(HouseUniversityType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_university_id_list
           ? { _id: { $in: parent.house_university_id_list } }
           : { university_id: parent._id };
@@ -173,7 +173,7 @@ const UniversityType = new GraphQLObjectType({
     students: {
       type: new GraphQLList(StudentType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.student_id_list
           ? { _id: { $in: parent.student_id_list } }
           : { university_id: parent._id };
@@ -214,14 +214,14 @@ const PersonType = new GraphQLObjectType({
     role: {
       type: RoleType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Role.findOne({_id: parent.role_id})
       },
     },
     students: {
       type: new GraphQLList(StudentType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.student_id_list
           ? { _id: { $in: parent.student_id_list } }
           : { _id: parent._id };
@@ -232,7 +232,7 @@ const PersonType = new GraphQLObjectType({
     landlords: {
       type: new GraphQLList(LandlordType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.landlord_id_list
           ? { _id: { $in: parent.landlord_id_list } }
           : { _id: parent._id };
@@ -243,7 +243,7 @@ const PersonType = new GraphQLObjectType({
     tickets: {
       type: new GraphQLList(TicketType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.ticket_id_list
           ? { _id: { $in: parent.ticket_id_list } }
           : { person_id: parent._id };
@@ -254,7 +254,7 @@ const PersonType = new GraphQLObjectType({
     notifications: {
       type: new GraphQLList(NotificationType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.notification_id_list
           ? { _id: { $in: parent.notification_id_list } }
           : { person_id: parent._id };
@@ -274,7 +274,7 @@ const PersonInput = new GraphQLInputObjectType({
     last_name: { type: GraphQLString  },
     middle_name: { type: GraphQLString  },
     birthday: { type: GraphQLDate  },
-    email: { type: new GraphQLNonNull(GraphQLString)  },
+    email: { type: GraphQLString  },
     password: { type: GraphQLString  },
     is_admin: { type: GraphQLBoolean  },
     created_at: { type: GraphQLDateTime  },
@@ -294,7 +294,7 @@ const TicketType = new GraphQLObjectType({
     person: {
       type: PersonType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Person.findOne({_id: parent.person_id})
       },
     },
@@ -322,7 +322,7 @@ const RoleType = new GraphQLObjectType({
     persons: {
       type: new GraphQLList(PersonType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.person_id_list
           ? { _id: { $in: parent.person_id_list } }
           : { role_id: parent._id };
@@ -352,32 +352,34 @@ const StudentType = new GraphQLObjectType({
     verified: { type: GraphQLBoolean  },
     tokens: { type: GraphQLInt  },
     uni_email: { type: GraphQLString  },
+    uni_email_verified: { type: GraphQLBoolean  },
+    uni_verification_token: { type: GraphQLString  },
 
     person: {
       type: PersonType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Person.findOne({_id: parent._id})
       },
     },
     university: {
       type: UniversityType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await University.findOne({_id: parent.university_id})
       },
     },
     status: {
       type: StatusType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Status.findOne({_id: parent.status_id})
       },
     },
     reviews: {
       type: new GraphQLList(ReviewType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.review_id_list
           ? { _id: { $in: parent.review_id_list } }
           : { student_id: parent._id };
@@ -388,7 +390,7 @@ const StudentType = new GraphQLObjectType({
     studentAchievements: {
       type: new GraphQLList(StudentAchievementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.student_achievement_id_list
           ? { _id: { $in: parent.student_achievement_id_list } }
           : { student_id: parent._id };
@@ -399,7 +401,7 @@ const StudentType = new GraphQLObjectType({
     favoriteHouses: {
       type: new GraphQLList(FavoriteHouseType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.favorite_house_id_list
           ? { _id: { $in: parent.favorite_house_id_list } }
           : { student_id: parent._id };
@@ -410,10 +412,11 @@ const StudentType = new GraphQLObjectType({
     elementPreferences: {
       type: new GraphQLList(ElementPreferenceType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.element_preference_id_list
           ? { _id: { $in: parent.element_preference_id_list } }
           : { student_id: parent._id };
+        query.student_id = context.user ? context.user.person_id : null;
         return await ElementPreference.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -426,12 +429,14 @@ const StudentInput = new GraphQLInputObjectType({
   name: 'StudentInput',
   description: '',
   fields: {
-    _id: { type: new GraphQLNonNull(GraphQLInt)  },
+    _id: { type: GraphQLInt  },
     university_id: { type: GraphQLInt  },
     status_id: { type: GraphQLInt  },
     verified: { type: GraphQLBoolean  },
     tokens: { type: GraphQLInt  },
     uni_email: { type: GraphQLString  },
+    uni_email_verified: { type: GraphQLBoolean  },
+    uni_verification_token: { type: GraphQLString  },
     person : { type: PersonInput }
   }
 });
@@ -446,7 +451,7 @@ const StatusType = new GraphQLObjectType({
     students: {
       type: new GraphQLList(StudentType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.student_id_list
           ? { _id: { $in: parent.student_id_list } }
           : { status_id: parent._id };
@@ -477,25 +482,26 @@ const LandlordType = new GraphQLObjectType({
     responsible_for_beds: { type: GraphQLInt  },
     contact_name: { type: GraphQLString  },
     contact_number: { type: GraphQLString  },
+    contact_email: { type: GraphQLString  },
 
     person: {
       type: PersonType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Person.findOne({_id: parent._id})
       },
     },
     landlord_kind: {
       type: LandlordKindType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await LandlordKind.findOne({_id: parent.landlord_kind_id})
       },
     },
     houses: {
       type: new GraphQLList(HouseType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_id_list
           ? { _id: { $in: parent.house_id_list } }
           : { landlord_id: parent._id };
@@ -518,6 +524,7 @@ const LandlordInput = new GraphQLInputObjectType({
     responsible_for_beds: { type: GraphQLInt  },
     contact_name: { type: GraphQLString  },
     contact_number: { type: GraphQLString  },
+    contact_email: { type: GraphQLString  },
     person : { type: PersonInput }
   }
 });
@@ -532,7 +539,7 @@ const LandlordKindType = new GraphQLObjectType({
     landlords: {
       type: new GraphQLList(LandlordType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.landlord_id_list
           ? { _id: { $in: parent.landlord_id_list } }
           : { landlord_kind_id: parent._id };
@@ -572,21 +579,21 @@ const HouseType = new GraphQLObjectType({
     landlord: {
       type: LandlordType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Landlord.findOne({_id: parent.landlord_id})
       },
     },
     house_kind: {
       type: HouseKindType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await HouseKind.findOne({_id: parent.house_kind_id})
       },
     },
     bedrooms: {
       type: new GraphQLList(BedroomType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.bedroom_id_list
           ? { _id: { $in: parent.bedroom_id_list } }
           : { house_id: parent._id };
@@ -597,7 +604,7 @@ const HouseType = new GraphQLObjectType({
     houseUniversities: {
       type: new GraphQLList(HouseUniversityType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_university_id_list
           ? { _id: { $in: parent.house_university_id_list } }
           : { house_id: parent._id };
@@ -608,7 +615,7 @@ const HouseType = new GraphQLObjectType({
     reviews: {
       type: new GraphQLList(ReviewType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.review_id_list
           ? { _id: { $in: parent.review_id_list } }
           : { house_id: parent._id };
@@ -619,7 +626,7 @@ const HouseType = new GraphQLObjectType({
     houseFacts: {
       type: new GraphQLList(HouseFactType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_fact_id_list
           ? { _id: { $in: parent.house_fact_id_list } }
           : { house_id: parent._id };
@@ -630,7 +637,7 @@ const HouseType = new GraphQLObjectType({
     housePhotos: {
       type: new GraphQLList(HousePhotoType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_photo_id_list
           ? { _id: { $in: parent.house_photo_id_list } }
           : { house_id: parent._id };
@@ -641,7 +648,7 @@ const HouseType = new GraphQLObjectType({
     houseBills: {
       type: new GraphQLList(HouseBillType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_bill_id_list
           ? { _id: { $in: parent.house_bill_id_list } }
           : { house_id: parent._id };
@@ -652,7 +659,7 @@ const HouseType = new GraphQLObjectType({
     favoriteHouses: {
       type: new GraphQLList(FavoriteHouseType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.favorite_house_id_list
           ? { _id: { $in: parent.favorite_house_id_list } }
           : { house_id: parent._id };
@@ -663,7 +670,7 @@ const HouseType = new GraphQLObjectType({
     houseElements: {
       type: new GraphQLList(HouseElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_element_id_list
           ? { _id: { $in: parent.house_element_id_list } }
           : { house_id: parent._id };
@@ -702,7 +709,7 @@ const HouseKindType = new GraphQLObjectType({
     houses: {
       type: new GraphQLList(HouseType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_id_list
           ? { _id: { $in: parent.house_id_list } }
           : { house_kind_id: parent._id };
@@ -733,7 +740,7 @@ const HousePhotoType = new GraphQLObjectType({
     house: {
       type: HouseType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await House.findOne({_id: parent.house_id})
       },
     },
@@ -761,7 +768,7 @@ const BedroomPhotoType = new GraphQLObjectType({
     bedroom: {
       type: BedroomType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Bedroom.findOne({_id: parent.bedroom_id})
       },
     },
@@ -788,7 +795,7 @@ const FactGroupType = new GraphQLObjectType({
     elements: {
       type: new GraphQLList(ElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.element_id_list
           ? { _id: { $in: parent.element_id_list } }
           : { fact_group_id: parent._id };
@@ -819,14 +826,14 @@ const HouseFactType = new GraphQLObjectType({
     house: {
       type: HouseType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await House.findOne({_id: parent.house_id})
       },
     },
     element: {
       type: ElementType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Element.findOne({_id: parent.element_id})
       },
     },
@@ -857,14 +864,14 @@ const HouseUniversityType = new GraphQLObjectType({
     house: {
       type: HouseType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await House.findOne({_id: parent.house_id})
       },
     },
     university: {
       type: UniversityType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await University.findOne({_id: parent.university_id})
       },
     },
@@ -904,14 +911,14 @@ const BedroomType = new GraphQLObjectType({
     house: {
       type: HouseType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await House.findOne({_id: parent.house_id})
       },
     },
     bedroomPhotos: {
       type: new GraphQLList(BedroomPhotoType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.bedroom_photo_id_list
           ? { _id: { $in: parent.bedroom_photo_id_list } }
           : { bedroom_id: parent._id };
@@ -951,7 +958,7 @@ const CategoryType = new GraphQLObjectType({
     elements: {
       type: new GraphQLList(ElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.element_id_list
           ? { _id: { $in: parent.element_id_list } }
           : { category_id: parent._id };
@@ -986,21 +993,21 @@ const ElementType = new GraphQLObjectType({
     category: {
       type: CategoryType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Category.findOne({_id: parent.category_id})
       },
     },
     fact_group: {
       type: FactGroupType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await FactGroup.findOne({_id: parent.fact_group_id})
       },
     },
     reviewHouseElements: {
       type: new GraphQLList(ReviewHouseElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.review_house_element_id_list
           ? { _id: { $in: parent.review_house_element_id_list } }
           : { element_id: parent._id };
@@ -1011,10 +1018,11 @@ const ElementType = new GraphQLObjectType({
     elementPreferences: {
       type: new GraphQLList(ElementPreferenceType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.element_preference_id_list
           ? { _id: { $in: parent.element_preference_id_list } }
           : { element_id: parent._id };
+        query.student_id = context.user ? context.user.person_id : null;
         return await ElementPreference.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -1022,7 +1030,7 @@ const ElementType = new GraphQLObjectType({
     houseElements: {
       type: new GraphQLList(HouseElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_element_id_list
           ? { _id: { $in: parent.house_element_id_list } }
           : { element_id: parent._id };
@@ -1033,7 +1041,7 @@ const ElementType = new GraphQLObjectType({
     houseFacts: {
       type: new GraphQLList(HouseFactType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_fact_id_list
           ? { _id: { $in: parent.house_fact_id_list } }
           : { element_id: parent._id };
@@ -1060,7 +1068,7 @@ const ElementInput = new GraphQLInputObjectType({
 
 const ElementPreferenceType = new GraphQLObjectType({
   name: 'ElementPreference',
-  description: '',
+  description: 'Represents student`s preferred element',
   fields: () => ({
     _id: { type: GraphQLInt  },
     student_id: { type: GraphQLInt  },
@@ -1071,14 +1079,14 @@ const ElementPreferenceType = new GraphQLObjectType({
     student: {
       type: StudentType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Student.findOne({_id: parent.student_id})
       },
     },
     element: {
       type: ElementType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Element.findOne({_id: parent.element_id})
       },
     },
@@ -1107,7 +1115,7 @@ const AchievementType = new GraphQLObjectType({
     studentAchievements: {
       type: new GraphQLList(StudentAchievementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.student_achievement_id_list
           ? { _id: { $in: parent.student_achievement_id_list } }
           : { achievement_id: parent._id };
@@ -1139,14 +1147,14 @@ const StudentAchievementType = new GraphQLObjectType({
     student: {
       type: StudentType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Student.findOne({_id: parent.student_id})
       },
     },
     achievement: {
       type: AchievementType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Achievement.findOne({_id: parent.achievement_id})
       },
     },
@@ -1178,21 +1186,21 @@ const ReviewType = new GraphQLObjectType({
     student: {
       type: StudentType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Student.findOne({_id: parent.student_id})
       },
     },
     house: {
       type: HouseType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await House.findOne({_id: parent.house_id})
       },
     },
     reviewHouseElements: {
       type: new GraphQLList(ReviewHouseElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.review_house_element_id_list
           ? { _id: { $in: parent.review_house_element_id_list } }
           : { review_id: parent._id };
@@ -1223,20 +1231,20 @@ const ReviewHouseElementType = new GraphQLObjectType({
     _id: { type: GraphQLInt  },
     review_id: { type: GraphQLInt  },
     element_id: { type: GraphQLInt  },
-    element_rating: { type: GraphQLString  },
+    element_rating: { type: GraphQLInt  },
     reviewer_element_weight: { type: GraphQLInt  },
 
     review: {
       type: ReviewType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Review.findOne({_id: parent.review_id})
       },
     },
     element: {
       type: ElementType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Element.findOne({_id: parent.element_id})
       },
     },
@@ -1250,7 +1258,7 @@ const ReviewHouseElementInput = new GraphQLInputObjectType({
   fields: {
     review_id: { type: new GraphQLNonNull(GraphQLInt)  },
     element_id: { type: new GraphQLNonNull(GraphQLInt)  },
-    element_rating: { type: new GraphQLNonNull(GraphQLString)  },
+    element_rating: { type: new GraphQLNonNull(GraphQLInt)  },
     reviewer_element_weight: { type: GraphQLInt  },
   }
 });
@@ -1267,14 +1275,14 @@ const HouseElementType = new GraphQLObjectType({
     element: {
       type: ElementType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Element.findOne({_id: parent.element_id})
       },
     },
     house: {
       type: HouseType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await House.findOne({_id: parent.house_id})
       },
     },
@@ -1307,7 +1315,7 @@ const NotificationType = new GraphQLObjectType({
     person: {
       type: PersonType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Person.findOne({_id: parent.person_id})
       },
     },
@@ -1338,7 +1346,7 @@ const BillType = new GraphQLObjectType({
     houseBills: {
       type: new GraphQLList(HouseBillType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         const query = parent.house_bill_id_list
           ? { _id: { $in: parent.house_bill_id_list } }
           : { bill_id: parent._id };
@@ -1369,14 +1377,14 @@ const HouseBillType = new GraphQLObjectType({
     house: {
       type: HouseType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await House.findOne({_id: parent.house_id})
       },
     },
     bill: {
       type: BillType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Bill.findOne({_id: parent.bill_id})
       },
     },
@@ -1404,14 +1412,14 @@ const FavoriteHouseType = new GraphQLObjectType({
     house: {
       type: HouseType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await House.findOne({_id: parent.house_id})
       },
     },
     student: {
       type: StudentType,
       args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args) {
+      async resolve(parent, args, context) {
         return await Student.findOne({_id: parent.student_id})
       },
     },
@@ -1432,392 +1440,392 @@ const queryFields = {
   university: {
     type: UniversityType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await University.findOne({_id: args._id})
     },
   },
   universities: {
     type: new GraphQLList(UniversityType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await University.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   person: {
     type: PersonType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Person.findOne({_id: args._id})
     },
   },
   persons: {
     type: new GraphQLList(PersonType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Person.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   ticket: {
     type: TicketType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Ticket.findOne({_id: args._id})
     },
   },
   tickets: {
     type: new GraphQLList(TicketType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Ticket.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   role: {
     type: RoleType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Role.findOne({_id: args._id})
     },
   },
   roles: {
     type: new GraphQLList(RoleType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Role.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   student: {
     type: StudentType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Student.findOne({_id: args._id})
     },
   },
   students: {
     type: new GraphQLList(StudentType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Student.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   status: {
     type: StatusType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Status.findOne({_id: args._id})
     },
   },
   statuses: {
     type: new GraphQLList(StatusType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Status.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   landlord: {
     type: LandlordType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Landlord.findOne({_id: args._id})
     },
   },
   landlords: {
     type: new GraphQLList(LandlordType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Landlord.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   landlord_kind: {
     type: LandlordKindType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await LandlordKind.findOne({_id: args._id})
     },
   },
   landlord_kinds: {
     type: new GraphQLList(LandlordKindType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await LandlordKind.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house: {
     type: HouseType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await House.findOne({_id: args._id})
     },
   },
   houses: {
     type: new GraphQLList(HouseType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await House.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_kind: {
     type: HouseKindType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HouseKind.findOne({_id: args._id})
     },
   },
   house_kinds: {
     type: new GraphQLList(HouseKindType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HouseKind.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_photo: {
     type: HousePhotoType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HousePhoto.findOne({_id: args._id})
     },
   },
   house_photos: {
     type: new GraphQLList(HousePhotoType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HousePhoto.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   bedroom_photo: {
     type: BedroomPhotoType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await BedroomPhoto.findOne({_id: args._id})
     },
   },
   bedroom_photos: {
     type: new GraphQLList(BedroomPhotoType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await BedroomPhoto.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   fact_group: {
     type: FactGroupType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await FactGroup.findOne({_id: args._id})
     },
   },
   fact_groups: {
     type: new GraphQLList(FactGroupType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await FactGroup.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_fact: {
     type: HouseFactType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HouseFact.findOne({_id: args._id})
     },
   },
   house_facts: {
     type: new GraphQLList(HouseFactType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HouseFact.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_university: {
     type: HouseUniversityType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HouseUniversity.findOne({_id: args._id})
     },
   },
   house_universities: {
     type: new GraphQLList(HouseUniversityType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HouseUniversity.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   bedroom: {
     type: BedroomType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Bedroom.findOne({_id: args._id})
     },
   },
   bedrooms: {
     type: new GraphQLList(BedroomType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Bedroom.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   category: {
     type: CategoryType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Category.findOne({_id: args._id})
     },
   },
   categories: {
     type: new GraphQLList(CategoryType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Category.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   element: {
     type: ElementType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Element.findOne({_id: args._id})
     },
   },
   elements: {
     type: new GraphQLList(ElementType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Element.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   element_preference: {
     type: ElementPreferenceType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await ElementPreference.findOne({_id: args._id})
     },
   },
   element_preferences: {
     type: new GraphQLList(ElementPreferenceType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await ElementPreference.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   achievement: {
     type: AchievementType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Achievement.findOne({_id: args._id})
     },
   },
   achievements: {
     type: new GraphQLList(AchievementType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Achievement.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   student_achievement: {
     type: StudentAchievementType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await StudentAchievement.findOne({_id: args._id})
     },
   },
   student_achievements: {
     type: new GraphQLList(StudentAchievementType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await StudentAchievement.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   review: {
     type: ReviewType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Review.findOne({_id: args._id})
     },
   },
   reviews: {
     type: new GraphQLList(ReviewType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Review.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   review_house_element: {
     type: ReviewHouseElementType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await ReviewHouseElement.findOne({_id: args._id})
     },
   },
   review_house_elements: {
     type: new GraphQLList(ReviewHouseElementType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await ReviewHouseElement.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_element: {
     type: HouseElementType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HouseElement.findOne({_id: args._id})
     },
   },
   house_elements: {
     type: new GraphQLList(HouseElementType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HouseElement.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   notification: {
     type: NotificationType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Notification.findOne({_id: args._id})
     },
   },
   notifications: {
     type: new GraphQLList(NotificationType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Notification.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   bill: {
     type: BillType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Bill.findOne({_id: args._id})
     },
   },
   bills: {
     type: new GraphQLList(BillType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await Bill.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_bill: {
     type: HouseBillType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HouseBill.findOne({_id: args._id})
     },
   },
   house_bills: {
     type: new GraphQLList(HouseBillType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await HouseBill.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   favorite_house: {
     type: FavoriteHouseType,
     args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await FavoriteHouse.findOne({_id: args._id})
     },
   },
   favorite_houses: {
     type: new GraphQLList(FavoriteHouseType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args) {
+    async resolve(parent, args, context) {
       return await FavoriteHouse.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
@@ -2687,7 +2695,7 @@ module.exports = { schema };
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri Nov 01 2019 01:07:12 GMT+0300 (GMT+03:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Thu Nov 14 2019 19:24:49 GMT+0300 (Москва, стандартное время)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
