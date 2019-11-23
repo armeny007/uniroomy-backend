@@ -102,6 +102,7 @@ const {
   GraphQLBoolean,
   GraphQLFloat,
   GraphQLNonNull,
+  GraphQLScalarType,
 } = require('graphql');
 
 const {
@@ -113,6 +114,28 @@ const {
 const { GraphQLUpload } = require('graphql-upload');
 
 const { prepareQueryFields, prepareMutationFields } = require('./graphql-schema-init');
+
+const ObjectScalarType = new GraphQLScalarType({
+  name: 'Object',
+  description: 'Arbitrary object',
+  parseValue: (value) => {
+    return typeof value === 'object' ? value
+      : typeof value === 'string' ? JSON.parse(value)
+      : null;
+  },
+  serialize: (value) => {
+    return typeof value === 'object' ? value
+      : typeof value === 'string' ? JSON.parse(value)
+      : null;
+  },
+  parseLiteral: (ast) => {
+    switch (ast.kind) {
+      case Kind.STRING: return JSON.parse(ast.value);
+      case Kind.OBJECT: throw new Error('Not sure what to do with OBJECT for ObjectScalarType');
+      default: return null;
+    }
+  }
+})
 
 const maxReturnedRows = parseInt(process.env.MAX_RETURNED_ROWS, 10) || 50;
 
@@ -139,16 +162,19 @@ const {
   Bedroom,
   Category,
   Element,
+  ElementKind,
   ElementPreference,
   Achievement,
   StudentAchievement,
   Review,
+  ReviewComment,
   ReviewHouseElement,
   HouseElement,
   Notification,
   Bill,
   HouseBill,
-  FavoriteHouse
+  FavoriteHouse,
+  PersonIssue
 } = require('./mongoose-schema');
 
 const UniversityType = new GraphQLObjectType({
@@ -163,9 +189,13 @@ const UniversityType = new GraphQLObjectType({
       type: new GraphQLList(HouseUniversityType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_university_id_list
-          ? { _id: { $in: parent.house_university_id_list } }
-          : { university_id: parent._id };
+        const query = {};
+        if (parent.house_university_id_list) {
+          query._id =  { $in: parent.house_university_id_list };
+        }
+        else {
+          query.university_id = parent._id;
+        }
         return await HouseUniversity.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -174,9 +204,13 @@ const UniversityType = new GraphQLObjectType({
       type: new GraphQLList(StudentType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.student_id_list
-          ? { _id: { $in: parent.student_id_list } }
-          : { university_id: parent._id };
+        const query = {};
+        if (parent.student_id_list) {
+          query._id =  { $in: parent.student_id_list };
+        }
+        else {
+          query.university_id = parent._id;
+        }
         return await Student.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -185,11 +219,20 @@ const UniversityType = new GraphQLObjectType({
   }),
 });
 
-const UniversityInput = new GraphQLInputObjectType({
-  name: 'UniversityInput',
+const UniversityCreateInput = new GraphQLInputObjectType({
+  name: 'UniversityCreateInput',
   description: 'Input fields for university',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString)  },
+    city: { type: GraphQLString  },
+  }
+});
+
+const UniversityUpdateInput = new GraphQLInputObjectType({
+  name: 'UniversityUpdateInput',
+  description: 'Input fields for university',
+  fields: {
+    name: { type: GraphQLString  },
     city: { type: GraphQLString  },
   }
 });
@@ -209,6 +252,7 @@ const PersonType = new GraphQLObjectType({
     is_admin: { type: GraphQLBoolean  },
     created_at: { type: GraphQLDateTime  },
     updated_at: { type: GraphQLDateTime  },
+    profile_photo_url: { type: GraphQLString  },
     full_name: { type: GraphQLString , description: 'Calculated field. Full Name = first_name + middle_name + last_name' },
 
     role: {
@@ -222,9 +266,13 @@ const PersonType = new GraphQLObjectType({
       type: new GraphQLList(StudentType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.student_id_list
-          ? { _id: { $in: parent.student_id_list } }
-          : { _id: parent._id };
+        const query = {};
+        if (parent.student_id_list) {
+          query._id =  { $in: parent.student_id_list };
+        }
+        else {
+          query._id = parent._id;
+        }
         return await Student.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -233,9 +281,13 @@ const PersonType = new GraphQLObjectType({
       type: new GraphQLList(LandlordType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.landlord_id_list
-          ? { _id: { $in: parent.landlord_id_list } }
-          : { _id: parent._id };
+        const query = {};
+        if (parent.landlord_id_list) {
+          query._id =  { $in: parent.landlord_id_list };
+        }
+        else {
+          query._id = parent._id;
+        }
         return await Landlord.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -244,9 +296,13 @@ const PersonType = new GraphQLObjectType({
       type: new GraphQLList(TicketType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.ticket_id_list
-          ? { _id: { $in: parent.ticket_id_list } }
-          : { person_id: parent._id };
+        const query = {};
+        if (parent.ticket_id_list) {
+          query._id =  { $in: parent.ticket_id_list };
+        }
+        else {
+          query.person_id = parent._id;
+        }
         return await Ticket.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -255,10 +311,29 @@ const PersonType = new GraphQLObjectType({
       type: new GraphQLList(NotificationType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.notification_id_list
-          ? { _id: { $in: parent.notification_id_list } }
-          : { person_id: parent._id };
+        const query = {};
+        if (parent.notification_id_list) {
+          query._id =  { $in: parent.notification_id_list };
+        }
+        else {
+          query.person_id = parent._id;
+        }
         return await Notification.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      },
+    },
+
+    personIssues: {
+      type: new GraphQLList(PersonIssueType),
+      args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        const query = {};
+        if (parent.person_issue_id_list) {
+          query._id =  { $in: parent.person_issue_id_list };
+        }
+        else {
+          query.person_id = parent._id;
+        }
+        return await PersonIssue.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
 
@@ -266,8 +341,8 @@ const PersonType = new GraphQLObjectType({
   }),
 });
 
-const PersonInput = new GraphQLInputObjectType({
-  name: 'PersonInput',
+const PersonCreateInput = new GraphQLInputObjectType({
+  name: 'PersonCreateInput',
   description: '',
   fields: {
     first_name: { type: GraphQLString  },
@@ -279,6 +354,24 @@ const PersonInput = new GraphQLInputObjectType({
     is_admin: { type: GraphQLBoolean  },
     created_at: { type: GraphQLDateTime  },
     updated_at: { type: GraphQLDateTime  },
+    profile_photo_url: { type: GraphQLUpload  },
+  }
+});
+
+const PersonUpdateInput = new GraphQLInputObjectType({
+  name: 'PersonUpdateInput',
+  description: '',
+  fields: {
+    first_name: { type: GraphQLString  },
+    last_name: { type: GraphQLString  },
+    middle_name: { type: GraphQLString  },
+    birthday: { type: GraphQLDate  },
+    email: { type: GraphQLString  },
+    password: { type: GraphQLString  },
+    is_admin: { type: GraphQLBoolean  },
+    created_at: { type: GraphQLDateTime  },
+    updated_at: { type: GraphQLDateTime  },
+    profile_photo_url: { type: GraphQLUpload  },
   }
 });
 
@@ -302,12 +395,22 @@ const TicketType = new GraphQLObjectType({
   }),
 });
 
-const TicketInput = new GraphQLInputObjectType({
-  name: 'TicketInput',
+const TicketCreateInput = new GraphQLInputObjectType({
+  name: 'TicketCreateInput',
   description: '',
   fields: {
     message: { type: new GraphQLNonNull(GraphQLString)  },
     person_id: { type: new GraphQLNonNull(GraphQLInt)  },
+    created_at: { type: GraphQLDateTime  },
+  }
+});
+
+const TicketUpdateInput = new GraphQLInputObjectType({
+  name: 'TicketUpdateInput',
+  description: '',
+  fields: {
+    message: { type: GraphQLString  },
+    person_id: { type: GraphQLInt  },
     created_at: { type: GraphQLDateTime  },
   }
 });
@@ -323,9 +426,13 @@ const RoleType = new GraphQLObjectType({
       type: new GraphQLList(PersonType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.person_id_list
-          ? { _id: { $in: parent.person_id_list } }
-          : { role_id: parent._id };
+        const query = {};
+        if (parent.person_id_list) {
+          query._id =  { $in: parent.person_id_list };
+        }
+        else {
+          query.role_id = parent._id;
+        }
         return await Person.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -334,11 +441,19 @@ const RoleType = new GraphQLObjectType({
   }),
 });
 
-const RoleInput = new GraphQLInputObjectType({
-  name: 'RoleInput',
+const RoleCreateInput = new GraphQLInputObjectType({
+  name: 'RoleCreateInput',
   description: '',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString)  },
+  }
+});
+
+const RoleUpdateInput = new GraphQLInputObjectType({
+  name: 'RoleUpdateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
   }
 });
 
@@ -354,6 +469,7 @@ const StudentType = new GraphQLObjectType({
     uni_email: { type: GraphQLString  },
     uni_email_verified: { type: GraphQLBoolean  },
     uni_verification_token: { type: GraphQLString  },
+    review_request_date: { type: GraphQLDateTime , description: 'A date when new request for the review should be sent to the student',  },
 
     person: {
       type: PersonType,
@@ -380,9 +496,13 @@ const StudentType = new GraphQLObjectType({
       type: new GraphQLList(ReviewType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.review_id_list
-          ? { _id: { $in: parent.review_id_list } }
-          : { student_id: parent._id };
+        const query = {};
+        if (parent.review_id_list) {
+          query._id =  { $in: parent.review_id_list };
+        }
+        else {
+          query.student_id = parent._id;
+        }
         return await Review.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -391,9 +511,13 @@ const StudentType = new GraphQLObjectType({
       type: new GraphQLList(StudentAchievementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.student_achievement_id_list
-          ? { _id: { $in: parent.student_achievement_id_list } }
-          : { student_id: parent._id };
+        const query = {};
+        if (parent.student_achievement_id_list) {
+          query._id =  { $in: parent.student_achievement_id_list };
+        }
+        else {
+          query.student_id = parent._id;
+        }
         return await StudentAchievement.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -402,9 +526,13 @@ const StudentType = new GraphQLObjectType({
       type: new GraphQLList(FavoriteHouseType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.favorite_house_id_list
-          ? { _id: { $in: parent.favorite_house_id_list } }
-          : { student_id: parent._id };
+        const query = {};
+        if (parent.favorite_house_id_list) {
+          query._id =  { $in: parent.favorite_house_id_list };
+        }
+        else {
+          query.student_id = parent._id;
+        }
         return await FavoriteHouse.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -413,9 +541,13 @@ const StudentType = new GraphQLObjectType({
       type: new GraphQLList(ElementPreferenceType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.element_preference_id_list
-          ? { _id: { $in: parent.element_preference_id_list } }
-          : { student_id: parent._id };
+        const query = {};
+        if (parent.element_preference_id_list) {
+          query._id =  { $in: parent.element_preference_id_list };
+        }
+        else {
+          query.student_id = parent._id;
+        }
         query.student_id = context.user ? context.user.person_id : null;
         return await ElementPreference.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
@@ -425,8 +557,8 @@ const StudentType = new GraphQLObjectType({
   }),
 });
 
-const StudentInput = new GraphQLInputObjectType({
-  name: 'StudentInput',
+const StudentCreateInput = new GraphQLInputObjectType({
+  name: 'StudentCreateInput',
   description: '',
   fields: {
     _id: { type: GraphQLInt  },
@@ -437,7 +569,25 @@ const StudentInput = new GraphQLInputObjectType({
     uni_email: { type: GraphQLString  },
     uni_email_verified: { type: GraphQLBoolean  },
     uni_verification_token: { type: GraphQLString  },
-    person : { type: PersonInput }
+    review_request_date: { type: GraphQLDateTime , description: 'A date when new request for the review should be sent to the student',  },
+    person : { type: PersonUpdateInput }
+  }
+});
+
+const StudentUpdateInput = new GraphQLInputObjectType({
+  name: 'StudentUpdateInput',
+  description: '',
+  fields: {
+    _id: { type: GraphQLInt  },
+    university_id: { type: GraphQLInt  },
+    status_id: { type: GraphQLInt  },
+    verified: { type: GraphQLBoolean  },
+    tokens: { type: GraphQLInt  },
+    uni_email: { type: GraphQLString  },
+    uni_email_verified: { type: GraphQLBoolean  },
+    uni_verification_token: { type: GraphQLString  },
+    review_request_date: { type: GraphQLDateTime , description: 'A date when new request for the review should be sent to the student',  },
+    person : { type: PersonUpdateInput }
   }
 });
 
@@ -452,9 +602,13 @@ const StatusType = new GraphQLObjectType({
       type: new GraphQLList(StudentType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.student_id_list
-          ? { _id: { $in: parent.student_id_list } }
-          : { status_id: parent._id };
+        const query = {};
+        if (parent.student_id_list) {
+          query._id =  { $in: parent.student_id_list };
+        }
+        else {
+          query.status_id = parent._id;
+        }
         return await Student.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -463,11 +617,19 @@ const StatusType = new GraphQLObjectType({
   }),
 });
 
-const StatusInput = new GraphQLInputObjectType({
-  name: 'StatusInput',
+const StatusCreateInput = new GraphQLInputObjectType({
+  name: 'StatusCreateInput',
   description: '',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString)  },
+  }
+});
+
+const StatusUpdateInput = new GraphQLInputObjectType({
+  name: 'StatusUpdateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
   }
 });
 
@@ -478,6 +640,7 @@ const LandlordType = new GraphQLObjectType({
     _id: { type: GraphQLInt  },
     landlord_kind_id: { type: GraphQLInt  },
     company_name: { type: GraphQLString  },
+    company_description: { type: GraphQLString  },
     responsible_for_houses: { type: GraphQLInt  },
     responsible_for_beds: { type: GraphQLInt  },
     contact_name: { type: GraphQLString  },
@@ -502,9 +665,13 @@ const LandlordType = new GraphQLObjectType({
       type: new GraphQLList(HouseType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_id_list
-          ? { _id: { $in: parent.house_id_list } }
-          : { landlord_id: parent._id };
+        const query = {};
+        if (parent.house_id_list) {
+          query._id =  { $in: parent.house_id_list };
+        }
+        else {
+          query.landlord_id = parent._id;
+        }
         return await House.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -513,19 +680,37 @@ const LandlordType = new GraphQLObjectType({
   }),
 });
 
-const LandlordInput = new GraphQLInputObjectType({
-  name: 'LandlordInput',
+const LandlordCreateInput = new GraphQLInputObjectType({
+  name: 'LandlordCreateInput',
   description: '',
   fields: {
     _id: { type: GraphQLInt  },
     landlord_kind_id: { type: GraphQLInt  },
     company_name: { type: GraphQLString  },
+    company_description: { type: GraphQLString  },
     responsible_for_houses: { type: GraphQLInt  },
     responsible_for_beds: { type: GraphQLInt  },
     contact_name: { type: GraphQLString  },
     contact_number: { type: GraphQLString  },
     contact_email: { type: GraphQLString  },
-    person : { type: PersonInput }
+    person : { type: PersonUpdateInput }
+  }
+});
+
+const LandlordUpdateInput = new GraphQLInputObjectType({
+  name: 'LandlordUpdateInput',
+  description: '',
+  fields: {
+    _id: { type: GraphQLInt  },
+    landlord_kind_id: { type: GraphQLInt  },
+    company_name: { type: GraphQLString  },
+    company_description: { type: GraphQLString  },
+    responsible_for_houses: { type: GraphQLInt  },
+    responsible_for_beds: { type: GraphQLInt  },
+    contact_name: { type: GraphQLString  },
+    contact_number: { type: GraphQLString  },
+    contact_email: { type: GraphQLString  },
+    person : { type: PersonUpdateInput }
   }
 });
 
@@ -540,9 +725,13 @@ const LandlordKindType = new GraphQLObjectType({
       type: new GraphQLList(LandlordType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.landlord_id_list
-          ? { _id: { $in: parent.landlord_id_list } }
-          : { landlord_kind_id: parent._id };
+        const query = {};
+        if (parent.landlord_id_list) {
+          query._id =  { $in: parent.landlord_id_list };
+        }
+        else {
+          query.landlord_kind_id = parent._id;
+        }
         return await Landlord.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -551,11 +740,19 @@ const LandlordKindType = new GraphQLObjectType({
   }),
 });
 
-const LandlordKindInput = new GraphQLInputObjectType({
-  name: 'LandlordKindInput',
+const LandlordKindCreateInput = new GraphQLInputObjectType({
+  name: 'LandlordKindCreateInput',
   description: '',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString)  },
+  }
+});
+
+const LandlordKindUpdateInput = new GraphQLInputObjectType({
+  name: 'LandlordKindUpdateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
   }
 });
 
@@ -570,11 +767,13 @@ const HouseType = new GraphQLObjectType({
     house_kind_id: { type: GraphQLInt  },
     city: { type: GraphQLString  },
     street: { type: GraphQLString  },
-    zip: { type: GraphQLString  },
+    post_code: { type: GraphQLString  },
     address: { type: GraphQLString  },
     bathes: { type: GraphQLInt  },
     rating: { type: GraphQLFloat  },
+    deposit: { type: GraphQLFloat  },
     Hr: { type: GraphQLFloat , description: 'House Rank. Used for sorting search results by relevance to search criteria. This field is only filled when called by search_houses query' },
+    key_ratings: { type: ObjectScalarType , description: 'Key Ratings' },
 
     landlord: {
       type: LandlordType,
@@ -594,9 +793,13 @@ const HouseType = new GraphQLObjectType({
       type: new GraphQLList(BedroomType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.bedroom_id_list
-          ? { _id: { $in: parent.bedroom_id_list } }
-          : { house_id: parent._id };
+        const query = {};
+        if (parent.bedroom_id_list) {
+          query._id =  { $in: parent.bedroom_id_list };
+        }
+        else {
+          query.house_id = parent._id;
+        }
         return await Bedroom.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -605,9 +808,13 @@ const HouseType = new GraphQLObjectType({
       type: new GraphQLList(HouseUniversityType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_university_id_list
-          ? { _id: { $in: parent.house_university_id_list } }
-          : { house_id: parent._id };
+        const query = {};
+        if (parent.house_university_id_list) {
+          query._id =  { $in: parent.house_university_id_list };
+        }
+        else {
+          query.house_id = parent._id;
+        }
         return await HouseUniversity.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -616,9 +823,13 @@ const HouseType = new GraphQLObjectType({
       type: new GraphQLList(ReviewType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.review_id_list
-          ? { _id: { $in: parent.review_id_list } }
-          : { house_id: parent._id };
+        const query = {};
+        if (parent.review_id_list) {
+          query._id =  { $in: parent.review_id_list };
+        }
+        else {
+          query.house_id = parent._id;
+        }
         return await Review.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -627,9 +838,13 @@ const HouseType = new GraphQLObjectType({
       type: new GraphQLList(HouseFactType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_fact_id_list
-          ? { _id: { $in: parent.house_fact_id_list } }
-          : { house_id: parent._id };
+        const query = {};
+        if (parent.house_fact_id_list) {
+          query._id =  { $in: parent.house_fact_id_list };
+        }
+        else {
+          query.house_id = parent._id;
+        }
         return await HouseFact.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -638,9 +853,13 @@ const HouseType = new GraphQLObjectType({
       type: new GraphQLList(HousePhotoType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_photo_id_list
-          ? { _id: { $in: parent.house_photo_id_list } }
-          : { house_id: parent._id };
+        const query = {};
+        if (parent.house_photo_id_list) {
+          query._id =  { $in: parent.house_photo_id_list };
+        }
+        else {
+          query.house_id = parent._id;
+        }
         return await HousePhoto.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -649,9 +868,13 @@ const HouseType = new GraphQLObjectType({
       type: new GraphQLList(HouseBillType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_bill_id_list
-          ? { _id: { $in: parent.house_bill_id_list } }
-          : { house_id: parent._id };
+        const query = {};
+        if (parent.house_bill_id_list) {
+          query._id =  { $in: parent.house_bill_id_list };
+        }
+        else {
+          query.house_id = parent._id;
+        }
         return await HouseBill.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -660,9 +883,13 @@ const HouseType = new GraphQLObjectType({
       type: new GraphQLList(FavoriteHouseType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.favorite_house_id_list
-          ? { _id: { $in: parent.favorite_house_id_list } }
-          : { house_id: parent._id };
+        const query = {};
+        if (parent.favorite_house_id_list) {
+          query._id =  { $in: parent.favorite_house_id_list };
+        }
+        else {
+          query.house_id = parent._id;
+        }
         return await FavoriteHouse.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -671,9 +898,13 @@ const HouseType = new GraphQLObjectType({
       type: new GraphQLList(HouseElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_element_id_list
-          ? { _id: { $in: parent.house_element_id_list } }
-          : { house_id: parent._id };
+        const query = {};
+        if (parent.house_element_id_list) {
+          query._id =  { $in: parent.house_element_id_list };
+        }
+        else {
+          query.house_id = parent._id;
+        }
         return await HouseElement.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -682,8 +913,8 @@ const HouseType = new GraphQLObjectType({
   }),
 });
 
-const HouseInput = new GraphQLInputObjectType({
-  name: 'HouseInput',
+const HouseCreateInput = new GraphQLInputObjectType({
+  name: 'HouseCreateInput',
   description: '',
   fields: {
     landlord_id: { type: new GraphQLNonNull(GraphQLInt)  },
@@ -692,10 +923,29 @@ const HouseInput = new GraphQLInputObjectType({
     house_kind_id: { type: GraphQLInt  },
     city: { type: GraphQLString  },
     street: { type: GraphQLString  },
-    zip: { type: GraphQLString  },
+    post_code: { type: GraphQLString  },
     address: { type: GraphQLString  },
     bathes: { type: GraphQLInt  },
     rating: { type: GraphQLFloat  },
+    deposit: { type: GraphQLFloat  },
+  }
+});
+
+const HouseUpdateInput = new GraphQLInputObjectType({
+  name: 'HouseUpdateInput',
+  description: '',
+  fields: {
+    landlord_id: { type: GraphQLInt  },
+    name: { type: GraphQLString , description: 'A name of a house. Probably this field is not necessary. It depends on frontend implementation.',  },
+    description: { type: GraphQLString  },
+    house_kind_id: { type: GraphQLInt  },
+    city: { type: GraphQLString  },
+    street: { type: GraphQLString  },
+    post_code: { type: GraphQLString  },
+    address: { type: GraphQLString  },
+    bathes: { type: GraphQLInt  },
+    rating: { type: GraphQLFloat  },
+    deposit: { type: GraphQLFloat  },
   }
 });
 
@@ -710,9 +960,13 @@ const HouseKindType = new GraphQLObjectType({
       type: new GraphQLList(HouseType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_id_list
-          ? { _id: { $in: parent.house_id_list } }
-          : { house_kind_id: parent._id };
+        const query = {};
+        if (parent.house_id_list) {
+          query._id =  { $in: parent.house_id_list };
+        }
+        else {
+          query.house_kind_id = parent._id;
+        }
         return await House.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -721,8 +975,16 @@ const HouseKindType = new GraphQLObjectType({
   }),
 });
 
-const HouseKindInput = new GraphQLInputObjectType({
-  name: 'HouseKindInput',
+const HouseKindCreateInput = new GraphQLInputObjectType({
+  name: 'HouseKindCreateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
+  }
+});
+
+const HouseKindUpdateInput = new GraphQLInputObjectType({
+  name: 'HouseKindUpdateInput',
   description: '',
   fields: {
     name: { type: GraphQLString  },
@@ -736,6 +998,8 @@ const HousePhotoType = new GraphQLObjectType({
     _id: { type: GraphQLInt  },
     url: { type: GraphQLString  },
     house_id: { type: GraphQLInt  },
+    is_main: { type: GraphQLBoolean  },
+    sort_order: { type: GraphQLInt  },
 
     house: {
       type: HouseType,
@@ -748,12 +1012,25 @@ const HousePhotoType = new GraphQLObjectType({
   }),
 });
 
-const HousePhotoInput = new GraphQLInputObjectType({
-  name: 'HousePhotoInput',
+const HousePhotoCreateInput = new GraphQLInputObjectType({
+  name: 'HousePhotoCreateInput',
   description: '',
   fields: {
     url: { type: new GraphQLNonNull(GraphQLUpload)  },
     house_id: { type: new GraphQLNonNull(GraphQLInt)  },
+    is_main: { type: GraphQLBoolean  },
+    sort_order: { type: GraphQLInt  },
+  }
+});
+
+const HousePhotoUpdateInput = new GraphQLInputObjectType({
+  name: 'HousePhotoUpdateInput',
+  description: '',
+  fields: {
+    url: { type: GraphQLUpload  },
+    house_id: { type: GraphQLInt  },
+    is_main: { type: GraphQLBoolean  },
+    sort_order: { type: GraphQLInt  },
   }
 });
 
@@ -776,12 +1053,21 @@ const BedroomPhotoType = new GraphQLObjectType({
   }),
 });
 
-const BedroomPhotoInput = new GraphQLInputObjectType({
-  name: 'BedroomPhotoInput',
+const BedroomPhotoCreateInput = new GraphQLInputObjectType({
+  name: 'BedroomPhotoCreateInput',
   description: '',
   fields: {
     url: { type: new GraphQLNonNull(GraphQLUpload)  },
     bedroom_id: { type: new GraphQLNonNull(GraphQLInt)  },
+  }
+});
+
+const BedroomPhotoUpdateInput = new GraphQLInputObjectType({
+  name: 'BedroomPhotoUpdateInput',
+  description: '',
+  fields: {
+    url: { type: GraphQLUpload  },
+    bedroom_id: { type: GraphQLInt  },
   }
 });
 
@@ -796,9 +1082,13 @@ const FactGroupType = new GraphQLObjectType({
       type: new GraphQLList(ElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.element_id_list
-          ? { _id: { $in: parent.element_id_list } }
-          : { fact_group_id: parent._id };
+        const query = {};
+        if (parent.element_id_list) {
+          query._id =  { $in: parent.element_id_list };
+        }
+        else {
+          query.fact_group_id = parent._id;
+        }
         return await Element.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -807,11 +1097,19 @@ const FactGroupType = new GraphQLObjectType({
   }),
 });
 
-const FactGroupInput = new GraphQLInputObjectType({
-  name: 'FactGroupInput',
+const FactGroupCreateInput = new GraphQLInputObjectType({
+  name: 'FactGroupCreateInput',
   description: '',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString)  },
+  }
+});
+
+const FactGroupUpdateInput = new GraphQLInputObjectType({
+  name: 'FactGroupUpdateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
   }
 });
 
@@ -841,12 +1139,21 @@ const HouseFactType = new GraphQLObjectType({
   }),
 });
 
-const HouseFactInput = new GraphQLInputObjectType({
-  name: 'HouseFactInput',
+const HouseFactCreateInput = new GraphQLInputObjectType({
+  name: 'HouseFactCreateInput',
   description: '',
   fields: {
     house_id: { type: new GraphQLNonNull(GraphQLInt)  },
     element_id: { type: new GraphQLNonNull(GraphQLInt)  },
+  }
+});
+
+const HouseFactUpdateInput = new GraphQLInputObjectType({
+  name: 'HouseFactUpdateInput',
+  description: '',
+  fields: {
+    house_id: { type: GraphQLInt  },
+    element_id: { type: GraphQLInt  },
   }
 });
 
@@ -879,12 +1186,24 @@ const HouseUniversityType = new GraphQLObjectType({
   }),
 });
 
-const HouseUniversityInput = new GraphQLInputObjectType({
-  name: 'HouseUniversityInput',
+const HouseUniversityCreateInput = new GraphQLInputObjectType({
+  name: 'HouseUniversityCreateInput',
   description: '',
   fields: {
     house_id: { type: new GraphQLNonNull(GraphQLInt)  },
     university_id: { type: new GraphQLNonNull(GraphQLInt)  },
+    commute_time_by_car: { type: GraphQLInt  },
+    commute_time_by_walk: { type: GraphQLInt  },
+    commute_time_by_bus: { type: GraphQLInt  },
+  }
+});
+
+const HouseUniversityUpdateInput = new GraphQLInputObjectType({
+  name: 'HouseUniversityUpdateInput',
+  description: '',
+  fields: {
+    house_id: { type: GraphQLInt  },
+    university_id: { type: GraphQLInt  },
     commute_time_by_car: { type: GraphQLInt  },
     commute_time_by_walk: { type: GraphQLInt  },
     commute_time_by_bus: { type: GraphQLInt  },
@@ -907,6 +1226,7 @@ const BedroomType = new GraphQLObjectType({
     contract_starts: { type: GraphQLDate  },
     contract_ends: { type: GraphQLDate  },
     occupied: { type: GraphQLBoolean  },
+    deposit: { type: GraphQLFloat  },
 
     house: {
       type: HouseType,
@@ -919,9 +1239,13 @@ const BedroomType = new GraphQLObjectType({
       type: new GraphQLList(BedroomPhotoType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.bedroom_photo_id_list
-          ? { _id: { $in: parent.bedroom_photo_id_list } }
-          : { bedroom_id: parent._id };
+        const query = {};
+        if (parent.bedroom_photo_id_list) {
+          query._id =  { $in: parent.bedroom_photo_id_list };
+        }
+        else {
+          query.bedroom_id = parent._id;
+        }
         return await BedroomPhoto.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -930,8 +1254,8 @@ const BedroomType = new GraphQLObjectType({
   }),
 });
 
-const BedroomInput = new GraphQLInputObjectType({
-  name: 'BedroomInput',
+const BedroomCreateInput = new GraphQLInputObjectType({
+  name: 'BedroomCreateInput',
   description: '',
   fields: {
     house_id: { type: new GraphQLNonNull(GraphQLInt)  },
@@ -945,6 +1269,26 @@ const BedroomInput = new GraphQLInputObjectType({
     contract_starts: { type: GraphQLDate  },
     contract_ends: { type: GraphQLDate  },
     occupied: { type: GraphQLBoolean  },
+    deposit: { type: GraphQLFloat  },
+  }
+});
+
+const BedroomUpdateInput = new GraphQLInputObjectType({
+  name: 'BedroomUpdateInput',
+  description: '',
+  fields: {
+    house_id: { type: GraphQLInt  },
+    name: { type: GraphQLString  },
+    beds: { type: GraphQLInt  },
+    baths: { type: GraphQLInt  },
+    weekly_price: { type: GraphQLFloat  },
+    monthly_price: { type: GraphQLFloat  },
+    rating: { type: GraphQLFloat  },
+    contract_length: { type: GraphQLInt  },
+    contract_starts: { type: GraphQLDate  },
+    contract_ends: { type: GraphQLDate  },
+    occupied: { type: GraphQLBoolean  },
+    deposit: { type: GraphQLFloat  },
   }
 });
 
@@ -953,16 +1297,44 @@ const CategoryType = new GraphQLObjectType({
   description: 'Category of element',
   fields: () => ({
     _id: { type: GraphQLInt  },
+    parent_id: { type: GraphQLInt  },
     name: { type: GraphQLString  },
 
+    category: {
+      type: CategoryType,
+      args: { _id: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        return await Category.findOne({_id: parent.parent_id})
+      },
+    },
     elements: {
       type: new GraphQLList(ElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.element_id_list
-          ? { _id: { $in: parent.element_id_list } }
-          : { category_id: parent._id };
+        const query = {};
+        if (parent.element_id_list) {
+          query._id =  { $in: parent.element_id_list };
+        }
+        else {
+          query.category_id = parent._id;
+        }
         return await Element.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      },
+    },
+
+    categories: {
+      type: new GraphQLList(CategoryType),
+      args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        const query = {};
+        if (parent.category_id_list) {
+          query._id =  { $in: parent.category_id_list };
+        }
+        else {
+          query.parent_id = parent._id;
+        }
+        query.parent_id = parent &amp;&amp; parent._id ? parent._id : null;;
+        return await Category.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
 
@@ -970,11 +1342,21 @@ const CategoryType = new GraphQLObjectType({
   }),
 });
 
-const CategoryInput = new GraphQLInputObjectType({
-  name: 'CategoryInput',
+const CategoryCreateInput = new GraphQLInputObjectType({
+  name: 'CategoryCreateInput',
   description: '',
   fields: {
+    parent_id: { type: GraphQLInt  },
     name: { type: new GraphQLNonNull(GraphQLString)  },
+  }
+});
+
+const CategoryUpdateInput = new GraphQLInputObjectType({
+  name: 'CategoryUpdateInput',
+  description: '',
+  fields: {
+    parent_id: { type: GraphQLInt  },
+    name: { type: GraphQLString  },
   }
 });
 
@@ -987,6 +1369,8 @@ const ElementType = new GraphQLObjectType({
     category_id: { type: GraphQLInt  },
     fact_group_id: { type: GraphQLInt  },
     is_fact: { type: GraphQLInt  },
+    preferable: { type: GraphQLBoolean  },
+    type_id: { type: GraphQLInt  },
     fact_group_sort_order: { type: GraphQLInt  },
     category_sort_order: { type: GraphQLInt  },
 
@@ -1004,13 +1388,24 @@ const ElementType = new GraphQLObjectType({
         return await FactGroup.findOne({_id: parent.fact_group_id})
       },
     },
+    element_kind: {
+      type: ElementKindType,
+      args: { _id: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        return await ElementKind.findOne({id: parent.type_id})
+      },
+    },
     reviewHouseElements: {
       type: new GraphQLList(ReviewHouseElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.review_house_element_id_list
-          ? { _id: { $in: parent.review_house_element_id_list } }
-          : { element_id: parent._id };
+        const query = {};
+        if (parent.review_house_element_id_list) {
+          query._id =  { $in: parent.review_house_element_id_list };
+        }
+        else {
+          query.element_id = parent._id;
+        }
         return await ReviewHouseElement.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -1019,9 +1414,13 @@ const ElementType = new GraphQLObjectType({
       type: new GraphQLList(ElementPreferenceType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.element_preference_id_list
-          ? { _id: { $in: parent.element_preference_id_list } }
-          : { element_id: parent._id };
+        const query = {};
+        if (parent.element_preference_id_list) {
+          query._id =  { $in: parent.element_preference_id_list };
+        }
+        else {
+          query.element_id = parent._id;
+        }
         query.student_id = context.user ? context.user.person_id : null;
         return await ElementPreference.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
@@ -1031,9 +1430,13 @@ const ElementType = new GraphQLObjectType({
       type: new GraphQLList(HouseElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_element_id_list
-          ? { _id: { $in: parent.house_element_id_list } }
-          : { element_id: parent._id };
+        const query = {};
+        if (parent.house_element_id_list) {
+          query._id =  { $in: parent.house_element_id_list };
+        }
+        else {
+          query.element_id = parent._id;
+        }
         return await HouseElement.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -1042,9 +1445,13 @@ const ElementType = new GraphQLObjectType({
       type: new GraphQLList(HouseFactType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_fact_id_list
-          ? { _id: { $in: parent.house_fact_id_list } }
-          : { element_id: parent._id };
+        const query = {};
+        if (parent.house_fact_id_list) {
+          query._id =  { $in: parent.house_fact_id_list };
+        }
+        else {
+          query.element_id = parent._id;
+        }
         return await HouseFact.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -1053,16 +1460,84 @@ const ElementType = new GraphQLObjectType({
   }),
 });
 
-const ElementInput = new GraphQLInputObjectType({
-  name: 'ElementInput',
+const ElementCreateInput = new GraphQLInputObjectType({
+  name: 'ElementCreateInput',
   description: '',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString)  },
     category_id: { type: new GraphQLNonNull(GraphQLInt)  },
     fact_group_id: { type: GraphQLInt  },
     is_fact: { type: GraphQLInt  },
+    preferable: { type: GraphQLBoolean  },
+    type_id: { type: GraphQLInt  },
     fact_group_sort_order: { type: GraphQLInt  },
     category_sort_order: { type: GraphQLInt  },
+  }
+});
+
+const ElementUpdateInput = new GraphQLInputObjectType({
+  name: 'ElementUpdateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
+    category_id: { type: GraphQLInt  },
+    fact_group_id: { type: GraphQLInt  },
+    is_fact: { type: GraphQLInt  },
+    preferable: { type: GraphQLBoolean  },
+    type_id: { type: GraphQLInt  },
+    fact_group_sort_order: { type: GraphQLInt  },
+    category_sort_order: { type: GraphQLInt  },
+  }
+});
+
+const ElementKindType = new GraphQLObjectType({
+  name: 'ElementKind',
+  description: 'Represents element type. (used word "kind" instead of "type" because of entity type name collisions)',
+  fields: () => ({
+    id: { type: GraphQLInt  },
+    name: { type: GraphQLString  },
+    from: { type: GraphQLInt  },
+    to: { type: GraphQLInt  },
+    values: { type: new GraphQLList(GraphQLString)  },
+
+    elements: {
+      type: new GraphQLList(ElementType),
+      args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        const query = {};
+        if (parent.element_id_list) {
+          query._id =  { $in: parent.element_id_list };
+        }
+        else {
+          query.type_id = parent.id;
+        }
+        return await Element.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      },
+    },
+
+
+  }),
+});
+
+const ElementKindCreateInput = new GraphQLInputObjectType({
+  name: 'ElementKindCreateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
+    from: { type: GraphQLInt  },
+    to: { type: GraphQLInt  },
+    values: { type: new GraphQLList(GraphQLString)  },
+  }
+});
+
+const ElementKindUpdateInput = new GraphQLInputObjectType({
+  name: 'ElementKindUpdateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
+    from: { type: GraphQLInt  },
+    to: { type: GraphQLInt  },
+    values: { type: new GraphQLList(GraphQLString)  },
   }
 });
 
@@ -1094,12 +1569,23 @@ const ElementPreferenceType = new GraphQLObjectType({
   }),
 });
 
-const ElementPreferenceInput = new GraphQLInputObjectType({
-  name: 'ElementPreferenceInput',
+const ElementPreferenceCreateInput = new GraphQLInputObjectType({
+  name: 'ElementPreferenceCreateInput',
   description: '',
   fields: {
     student_id: { type: new GraphQLNonNull(GraphQLInt)  },
     element_id: { type: new GraphQLNonNull(GraphQLInt)  },
+    element_weight: { type: GraphQLFloat  },
+    value: { type: GraphQLInt  },
+  }
+});
+
+const ElementPreferenceUpdateInput = new GraphQLInputObjectType({
+  name: 'ElementPreferenceUpdateInput',
+  description: '',
+  fields: {
+    student_id: { type: GraphQLInt  },
+    element_id: { type: GraphQLInt  },
     element_weight: { type: GraphQLFloat  },
     value: { type: GraphQLInt  },
   }
@@ -1116,9 +1602,13 @@ const AchievementType = new GraphQLObjectType({
       type: new GraphQLList(StudentAchievementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.student_achievement_id_list
-          ? { _id: { $in: parent.student_achievement_id_list } }
-          : { achievement_id: parent._id };
+        const query = {};
+        if (parent.student_achievement_id_list) {
+          query._id =  { $in: parent.student_achievement_id_list };
+        }
+        else {
+          query.achievement_id = parent._id;
+        }
         return await StudentAchievement.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -1127,11 +1617,19 @@ const AchievementType = new GraphQLObjectType({
   }),
 });
 
-const AchievementInput = new GraphQLInputObjectType({
-  name: 'AchievementInput',
+const AchievementCreateInput = new GraphQLInputObjectType({
+  name: 'AchievementCreateInput',
   description: '',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString)  },
+  }
+});
+
+const AchievementUpdateInput = new GraphQLInputObjectType({
+  name: 'AchievementUpdateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
   }
 });
 
@@ -1162,12 +1660,22 @@ const StudentAchievementType = new GraphQLObjectType({
   }),
 });
 
-const StudentAchievementInput = new GraphQLInputObjectType({
-  name: 'StudentAchievementInput',
+const StudentAchievementCreateInput = new GraphQLInputObjectType({
+  name: 'StudentAchievementCreateInput',
   description: '',
   fields: {
     student_id: { type: new GraphQLNonNull(GraphQLInt)  },
     achievement_id: { type: new GraphQLNonNull(GraphQLInt)  },
+    created_at: { type: GraphQLDateTime  },
+  }
+});
+
+const StudentAchievementUpdateInput = new GraphQLInputObjectType({
+  name: 'StudentAchievementUpdateInput',
+  description: '',
+  fields: {
+    student_id: { type: GraphQLInt  },
+    achievement_id: { type: GraphQLInt  },
     created_at: { type: GraphQLDateTime  },
   }
 });
@@ -1183,6 +1691,13 @@ const ReviewType = new GraphQLObjectType({
     house_rating: { type: GraphQLInt  },
     created_at: { type: GraphQLDate  },
 
+    review_comment: {
+      type: ReviewCommentType,
+      args: { _id: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        return await ReviewComment.findOne({review_id: parent._id})
+      },
+    },
     student: {
       type: StudentType,
       args: { _id: { type: GraphQLInt }, },
@@ -1201,9 +1716,13 @@ const ReviewType = new GraphQLObjectType({
       type: new GraphQLList(ReviewHouseElementType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.review_house_element_id_list
-          ? { _id: { $in: parent.review_house_element_id_list } }
-          : { review_id: parent._id };
+        const query = {};
+        if (parent.review_house_element_id_list) {
+          query._id =  { $in: parent.review_house_element_id_list };
+        }
+        else {
+          query.review_id = parent._id;
+        }
         return await ReviewHouseElement.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -1212,8 +1731,8 @@ const ReviewType = new GraphQLObjectType({
   }),
 });
 
-const ReviewInput = new GraphQLInputObjectType({
-  name: 'ReviewInput',
+const ReviewCreateInput = new GraphQLInputObjectType({
+  name: 'ReviewCreateInput',
   description: '',
   fields: {
     student_id: { type: new GraphQLNonNull(GraphQLInt)  },
@@ -1221,6 +1740,63 @@ const ReviewInput = new GraphQLInputObjectType({
     description: { type: new GraphQLNonNull(GraphQLString)  },
     house_rating: { type: new GraphQLNonNull(GraphQLInt)  },
     created_at: { type: GraphQLDate  },
+  }
+});
+
+const ReviewUpdateInput = new GraphQLInputObjectType({
+  name: 'ReviewUpdateInput',
+  description: '',
+  fields: {
+    student_id: { type: GraphQLInt  },
+    house_id: { type: GraphQLInt  },
+    description: { type: GraphQLString  },
+    house_rating: { type: GraphQLInt  },
+    created_at: { type: GraphQLDate  },
+  }
+});
+
+const ReviewCommentType = new GraphQLObjectType({
+  name: 'ReviewComment',
+  description: '',
+  fields: () => ({
+    _id: { type: GraphQLInt  },
+    review_id: { type: GraphQLInt  },
+    message: { type: GraphQLString  },
+
+    reviews: {
+      type: new GraphQLList(ReviewType),
+      args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        const query = {};
+        if (parent.review_id_list) {
+          query._id =  { $in: parent.review_id_list };
+        }
+        else {
+          query._id = parent.review_id;
+        }
+        return await Review.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      },
+    },
+
+
+  }),
+});
+
+const ReviewCommentCreateInput = new GraphQLInputObjectType({
+  name: 'ReviewCommentCreateInput',
+  description: '',
+  fields: {
+    review_id: { type: new GraphQLNonNull(GraphQLInt)  },
+    message: { type: GraphQLString  },
+  }
+});
+
+const ReviewCommentUpdateInput = new GraphQLInputObjectType({
+  name: 'ReviewCommentUpdateInput',
+  description: '',
+  fields: {
+    review_id: { type: GraphQLInt  },
+    message: { type: GraphQLString  },
   }
 });
 
@@ -1252,13 +1828,24 @@ const ReviewHouseElementType = new GraphQLObjectType({
   }),
 });
 
-const ReviewHouseElementInput = new GraphQLInputObjectType({
-  name: 'ReviewHouseElementInput',
+const ReviewHouseElementCreateInput = new GraphQLInputObjectType({
+  name: 'ReviewHouseElementCreateInput',
   description: '',
   fields: {
     review_id: { type: new GraphQLNonNull(GraphQLInt)  },
     element_id: { type: new GraphQLNonNull(GraphQLInt)  },
     element_rating: { type: new GraphQLNonNull(GraphQLInt)  },
+    reviewer_element_weight: { type: GraphQLInt  },
+  }
+});
+
+const ReviewHouseElementUpdateInput = new GraphQLInputObjectType({
+  name: 'ReviewHouseElementUpdateInput',
+  description: '',
+  fields: {
+    review_id: { type: GraphQLInt  },
+    element_id: { type: GraphQLInt  },
+    element_rating: { type: GraphQLInt  },
     reviewer_element_weight: { type: GraphQLInt  },
   }
 });
@@ -1290,12 +1877,22 @@ const HouseElementType = new GraphQLObjectType({
   }),
 });
 
-const HouseElementInput = new GraphQLInputObjectType({
-  name: 'HouseElementInput',
+const HouseElementCreateInput = new GraphQLInputObjectType({
+  name: 'HouseElementCreateInput',
   description: '',
   fields: {
     element_id: { type: new GraphQLNonNull(GraphQLInt)  },
     house_id: { type: new GraphQLNonNull(GraphQLInt)  },
+    normalized_average_rating: { type: GraphQLFloat  },
+  }
+});
+
+const HouseElementUpdateInput = new GraphQLInputObjectType({
+  name: 'HouseElementUpdateInput',
+  description: '',
+  fields: {
+    element_id: { type: GraphQLInt  },
+    house_id: { type: GraphQLInt  },
     normalized_average_rating: { type: GraphQLFloat  },
   }
 });
@@ -1323,11 +1920,24 @@ const NotificationType = new GraphQLObjectType({
   }),
 });
 
-const NotificationInput = new GraphQLInputObjectType({
-  name: 'NotificationInput',
+const NotificationCreateInput = new GraphQLInputObjectType({
+  name: 'NotificationCreateInput',
   description: '',
   fields: {
     person_id: { type: new GraphQLNonNull(GraphQLInt)  },
+    title: { type: GraphQLString  },
+    subtitle: { type: GraphQLString  },
+    full_description: { type: GraphQLString  },
+    action: { type: GraphQLString  },
+    read: { type: GraphQLBoolean  },
+  }
+});
+
+const NotificationUpdateInput = new GraphQLInputObjectType({
+  name: 'NotificationUpdateInput',
+  description: '',
+  fields: {
+    person_id: { type: GraphQLInt  },
     title: { type: GraphQLString  },
     subtitle: { type: GraphQLString  },
     full_description: { type: GraphQLString  },
@@ -1347,9 +1957,13 @@ const BillType = new GraphQLObjectType({
       type: new GraphQLList(HouseBillType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        const query = parent.house_bill_id_list
-          ? { _id: { $in: parent.house_bill_id_list } }
-          : { bill_id: parent._id };
+        const query = {};
+        if (parent.house_bill_id_list) {
+          query._id =  { $in: parent.house_bill_id_list };
+        }
+        else {
+          query.bill_id = parent._id;
+        }
         return await HouseBill.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -1358,11 +1972,19 @@ const BillType = new GraphQLObjectType({
   }),
 });
 
-const BillInput = new GraphQLInputObjectType({
-  name: 'BillInput',
+const BillCreateInput = new GraphQLInputObjectType({
+  name: 'BillCreateInput',
   description: '',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString)  },
+  }
+});
+
+const BillUpdateInput = new GraphQLInputObjectType({
+  name: 'BillUpdateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
   }
 });
 
@@ -1392,12 +2014,21 @@ const HouseBillType = new GraphQLObjectType({
   }),
 });
 
-const HouseBillInput = new GraphQLInputObjectType({
-  name: 'HouseBillInput',
+const HouseBillCreateInput = new GraphQLInputObjectType({
+  name: 'HouseBillCreateInput',
   description: '',
   fields: {
     house_id: { type: new GraphQLNonNull(GraphQLInt)  },
     bill_id: { type: new GraphQLNonNull(GraphQLInt)  },
+  }
+});
+
+const HouseBillUpdateInput = new GraphQLInputObjectType({
+  name: 'HouseBillUpdateInput',
+  description: '',
+  fields: {
+    house_id: { type: GraphQLInt  },
+    bill_id: { type: GraphQLInt  },
   }
 });
 
@@ -1427,12 +2058,64 @@ const FavoriteHouseType = new GraphQLObjectType({
   }),
 });
 
-const FavoriteHouseInput = new GraphQLInputObjectType({
-  name: 'FavoriteHouseInput',
+const FavoriteHouseCreateInput = new GraphQLInputObjectType({
+  name: 'FavoriteHouseCreateInput',
   description: '',
   fields: {
     house_id: { type: new GraphQLNonNull(GraphQLInt)  },
     student_id: { type: new GraphQLNonNull(GraphQLInt)  },
+  }
+});
+
+const FavoriteHouseUpdateInput = new GraphQLInputObjectType({
+  name: 'FavoriteHouseUpdateInput',
+  description: '',
+  fields: {
+    house_id: { type: GraphQLInt  },
+    student_id: { type: GraphQLInt  },
+  }
+});
+
+const PersonIssueType = new GraphQLObjectType({
+  name: 'PersonIssue',
+  description: '',
+  fields: () => ({
+    _id: { type: GraphQLInt  },
+    person_id: { type: GraphQLInt  },
+    title: { type: GraphQLString  },
+    message: { type: GraphQLString  },
+    created_at: { type: GraphQLDateTime  },
+
+    person: {
+      type: PersonType,
+      args: { _id: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        return await Person.findOne({_id: parent.person_id})
+      },
+    },
+
+  }),
+});
+
+const PersonIssueCreateInput = new GraphQLInputObjectType({
+  name: 'PersonIssueCreateInput',
+  description: '',
+  fields: {
+    person_id: { type: new GraphQLNonNull(GraphQLInt)  },
+    title: { type: GraphQLString  },
+    message: { type: GraphQLString  },
+    created_at: { type: GraphQLDateTime  },
+  }
+});
+
+const PersonIssueUpdateInput = new GraphQLInputObjectType({
+  name: 'PersonIssueUpdateInput',
+  description: '',
+  fields: {
+    person_id: { type: GraphQLInt  },
+    title: { type: GraphQLString  },
+    message: { type: GraphQLString  },
+    created_at: { type: GraphQLDateTime  },
   }
 });
 
@@ -1448,7 +2131,8 @@ const queryFields = {
     type: new GraphQLList(UniversityType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await University.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await University.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   person: {
@@ -1462,7 +2146,8 @@ const queryFields = {
     type: new GraphQLList(PersonType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Person.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Person.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   ticket: {
@@ -1476,7 +2161,8 @@ const queryFields = {
     type: new GraphQLList(TicketType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Ticket.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Ticket.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   role: {
@@ -1490,7 +2176,8 @@ const queryFields = {
     type: new GraphQLList(RoleType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Role.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Role.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   student: {
@@ -1504,7 +2191,8 @@ const queryFields = {
     type: new GraphQLList(StudentType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Student.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Student.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   status: {
@@ -1518,7 +2206,8 @@ const queryFields = {
     type: new GraphQLList(StatusType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Status.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Status.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   landlord: {
@@ -1532,7 +2221,8 @@ const queryFields = {
     type: new GraphQLList(LandlordType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Landlord.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Landlord.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   landlord_kind: {
@@ -1546,7 +2236,8 @@ const queryFields = {
     type: new GraphQLList(LandlordKindType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await LandlordKind.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await LandlordKind.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house: {
@@ -1560,7 +2251,8 @@ const queryFields = {
     type: new GraphQLList(HouseType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await House.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await House.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_kind: {
@@ -1574,7 +2266,8 @@ const queryFields = {
     type: new GraphQLList(HouseKindType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await HouseKind.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await HouseKind.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_photo: {
@@ -1588,7 +2281,8 @@ const queryFields = {
     type: new GraphQLList(HousePhotoType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await HousePhoto.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await HousePhoto.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   bedroom_photo: {
@@ -1602,7 +2296,8 @@ const queryFields = {
     type: new GraphQLList(BedroomPhotoType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await BedroomPhoto.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await BedroomPhoto.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   fact_group: {
@@ -1616,7 +2311,8 @@ const queryFields = {
     type: new GraphQLList(FactGroupType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await FactGroup.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await FactGroup.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_fact: {
@@ -1630,7 +2326,8 @@ const queryFields = {
     type: new GraphQLList(HouseFactType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await HouseFact.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await HouseFact.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_university: {
@@ -1644,7 +2341,8 @@ const queryFields = {
     type: new GraphQLList(HouseUniversityType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await HouseUniversity.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await HouseUniversity.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   bedroom: {
@@ -1658,7 +2356,8 @@ const queryFields = {
     type: new GraphQLList(BedroomType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Bedroom.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Bedroom.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   category: {
@@ -1672,7 +2371,9 @@ const queryFields = {
     type: new GraphQLList(CategoryType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Category.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      query.parent_id = parent &amp;&amp; parent._id ? parent._id : null;;
+      return await Category.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   element: {
@@ -1686,7 +2387,23 @@ const queryFields = {
     type: new GraphQLList(ElementType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Element.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Element.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+    },
+  },
+  element_kind: {
+    type: ElementKindType,
+    args: { _id: { type: GraphQLInt }, },
+    async resolve(parent, args, context) {
+      return await ElementKind.findOne({_id: args._id})
+    },
+  },
+  element_kinds: {
+    type: new GraphQLList(ElementKindType),
+    args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
+    async resolve(parent, args, context) {
+      const query = {};
+      return await ElementKind.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   element_preference: {
@@ -1700,7 +2417,9 @@ const queryFields = {
     type: new GraphQLList(ElementPreferenceType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await ElementPreference.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      query.student_id = context.user ? context.user.person_id : null;
+      return await ElementPreference.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   achievement: {
@@ -1714,7 +2433,8 @@ const queryFields = {
     type: new GraphQLList(AchievementType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Achievement.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Achievement.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   student_achievement: {
@@ -1728,7 +2448,8 @@ const queryFields = {
     type: new GraphQLList(StudentAchievementType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await StudentAchievement.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await StudentAchievement.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   review: {
@@ -1742,7 +2463,23 @@ const queryFields = {
     type: new GraphQLList(ReviewType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Review.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Review.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+    },
+  },
+  review_comment: {
+    type: ReviewCommentType,
+    args: { _id: { type: GraphQLInt }, },
+    async resolve(parent, args, context) {
+      return await ReviewComment.findOne({_id: args._id})
+    },
+  },
+  review_comments: {
+    type: new GraphQLList(ReviewCommentType),
+    args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
+    async resolve(parent, args, context) {
+      const query = {};
+      return await ReviewComment.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   review_house_element: {
@@ -1756,7 +2493,8 @@ const queryFields = {
     type: new GraphQLList(ReviewHouseElementType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await ReviewHouseElement.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await ReviewHouseElement.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_element: {
@@ -1770,7 +2508,8 @@ const queryFields = {
     type: new GraphQLList(HouseElementType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await HouseElement.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await HouseElement.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   notification: {
@@ -1784,7 +2523,8 @@ const queryFields = {
     type: new GraphQLList(NotificationType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Notification.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Notification.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   bill: {
@@ -1798,7 +2538,8 @@ const queryFields = {
     type: new GraphQLList(BillType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await Bill.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await Bill.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   house_bill: {
@@ -1812,7 +2553,8 @@ const queryFields = {
     type: new GraphQLList(HouseBillType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await HouseBill.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await HouseBill.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   favorite_house: {
@@ -1826,7 +2568,23 @@ const queryFields = {
     type: new GraphQLList(FavoriteHouseType),
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
-      return await FavoriteHouse.find({}).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      const query = {};
+      return await FavoriteHouse.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+    },
+  },
+  person_issue: {
+    type: PersonIssueType,
+    args: { _id: { type: GraphQLInt }, },
+    async resolve(parent, args, context) {
+      return await PersonIssue.findOne({_id: args._id})
+    },
+  },
+  person_issues: {
+    type: new GraphQLList(PersonIssueType),
+    args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
+    async resolve(parent, args, context) {
+      const query = {};
+      return await PersonIssue.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
 };
@@ -1834,7 +2592,7 @@ const queryFields = {
 const mutationFields = {
   addUniversity: {
     type: UniversityType,
-    args: { input: {type: UniversityInput } },
+    args: { input: {type: UniversityCreateInput } },
     async resolve(parent, args) {
       return await University.create(args.input);
     }
@@ -1842,7 +2600,7 @@ const mutationFields = {
   updateUniversity: {
     type: UniversityType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(UniversityInput) },  },
+    input: { type: GraphQLNonNull(UniversityUpdateInput) },  },
     async resolve(parent, args) {
       return await University.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -1857,16 +2615,82 @@ const mutationFields = {
   },
   addPerson: {
     type: PersonType,
-    args: { input: {type: PersonInput } },
+    args: { input: {type: PersonCreateInput } },
     async resolve(parent, args) {
+      for (const field of ["profile_photo_url"]) {
+        if (!args.input[field]) {
+          continue;
+        }
+        const inputFile = args.input[field];
+        const { filename, mimetype, createReadStream } = await inputFile;
+        console.log({ filename });
+        console.log({ mimetype });
+        const source = createReadStream();
+        const uuid = uuidv4();
+        const storeFileName = uuid + '-' + filename;
+        const destFilePath = path.join(process.env.UPLOAD_PATH, storeFileName);
+        console.log({ destFilePath });
+        const dest = fs.createWriteStream(destFilePath);
+      
+        await new Promise((resolve, reject) => {
+          source.on('open', () => {
+            console.log('on open');
+            source.pipe(dest);
+          });
+          source.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('finish', () => {
+            console.log('on finish');
+            resolve();
+          });
+        });
+        args.input[field] = process.env.UPLOAD_URL + storeFileName;
+      }
       return await Person.create(args.input);
     }
   },
   updatePerson: {
     type: PersonType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(PersonInput) },  },
+    input: { type: GraphQLNonNull(PersonUpdateInput) },  },
     async resolve(parent, args) {
+      for (const field of ["profile_photo_url"]) {
+        if (!args.input[field]) {
+          continue;
+        }
+        const inputFile = args.input[field];
+        const { filename, mimetype, createReadStream } = await inputFile;
+        console.log({ filename });
+        console.log({ mimetype });
+        const source = createReadStream();
+        const uuid = uuidv4();
+        const storeFileName = uuid + '-' + filename;
+        const destFilePath = path.join(process.env.UPLOAD_PATH, storeFileName);
+        console.log({ destFilePath });
+        const dest = fs.createWriteStream(destFilePath);
+      
+        await new Promise((resolve, reject) => {
+          source.on('open', () => {
+            console.log('on open');
+            source.pipe(dest);
+          });
+          source.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('error', (err) => {
+            reject(err);
+          });
+          dest.on('finish', () => {
+            console.log('on finish');
+            resolve();
+          });
+        });
+        args.input[field] = process.env.UPLOAD_URL + storeFileName;
+      }
       return await Person.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
   },
@@ -1874,13 +2698,21 @@ const mutationFields = {
     type: GraphQLBoolean,
     args: { _id: { type: GraphQLInt }, },
     async resolve(parent, args) {
+      for (const field of ["profile_photo_url"]) {
+        const person = await Person.findOne({ _id: args._id });
+        if (person) {
+          const fileName = getUrlFileName(person[field]);
+          const filePath = path.join(process.env.UPLOAD_PATH, fileName);
+          fs.unlink(filePath, err => {console.log(err)});
+        }
+      }
       const result = await Person.deleteOne({ _id: args._id });
       return result ? !!result.deletedCount : null
     }
   },
   addTicket: {
     type: TicketType,
-    args: { input: {type: TicketInput } },
+    args: { input: {type: TicketCreateInput } },
     async resolve(parent, args) {
       return await Ticket.create(args.input);
     }
@@ -1888,7 +2720,7 @@ const mutationFields = {
   updateTicket: {
     type: TicketType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(TicketInput) },  },
+    input: { type: GraphQLNonNull(TicketUpdateInput) },  },
     async resolve(parent, args) {
       return await Ticket.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -1903,7 +2735,7 @@ const mutationFields = {
   },
   addRole: {
     type: RoleType,
-    args: { input: {type: RoleInput } },
+    args: { input: {type: RoleCreateInput } },
     async resolve(parent, args) {
       return await Role.create(args.input);
     }
@@ -1911,7 +2743,7 @@ const mutationFields = {
   updateRole: {
     type: RoleType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(RoleInput) },  },
+    input: { type: GraphQLNonNull(RoleUpdateInput) },  },
     async resolve(parent, args) {
       return await Role.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -1926,7 +2758,7 @@ const mutationFields = {
   },
   addStudent: {
     type: StudentType,
-    args: { input: {type: StudentInput } },
+    args: { input: {type: StudentCreateInput } },
     async resolve(parent, args) {
       return await Student.create(args.input);
     }
@@ -1934,7 +2766,7 @@ const mutationFields = {
   updateStudent: {
     type: StudentType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(StudentInput) },  },
+    input: { type: GraphQLNonNull(StudentUpdateInput) },  },
     async resolve(parent, args) {
       if (args.input.person) {
         await Person.findOneAndUpdate({ _id: args._id }, args.input.person, { new: true });
@@ -1953,7 +2785,7 @@ const mutationFields = {
   },
   addStatus: {
     type: StatusType,
-    args: { input: {type: StatusInput } },
+    args: { input: {type: StatusCreateInput } },
     async resolve(parent, args) {
       return await Status.create(args.input);
     }
@@ -1961,7 +2793,7 @@ const mutationFields = {
   updateStatus: {
     type: StatusType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(StatusInput) },  },
+    input: { type: GraphQLNonNull(StatusUpdateInput) },  },
     async resolve(parent, args) {
       return await Status.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -1976,7 +2808,7 @@ const mutationFields = {
   },
   addLandlord: {
     type: LandlordType,
-    args: { input: {type: LandlordInput } },
+    args: { input: {type: LandlordCreateInput } },
     async resolve(parent, args) {
       return await Landlord.create(args.input);
     }
@@ -1984,7 +2816,7 @@ const mutationFields = {
   updateLandlord: {
     type: LandlordType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(LandlordInput) },  },
+    input: { type: GraphQLNonNull(LandlordUpdateInput) },  },
     async resolve(parent, args) {
       if (args.input.person) {
         await Person.findOneAndUpdate({ _id: args._id }, args.input.person, { new: true });
@@ -2003,7 +2835,7 @@ const mutationFields = {
   },
   addLandlordKind: {
     type: LandlordKindType,
-    args: { input: {type: LandlordKindInput } },
+    args: { input: {type: LandlordKindCreateInput } },
     async resolve(parent, args) {
       return await LandlordKind.create(args.input);
     }
@@ -2011,7 +2843,7 @@ const mutationFields = {
   updateLandlordKind: {
     type: LandlordKindType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(LandlordKindInput) },  },
+    input: { type: GraphQLNonNull(LandlordKindUpdateInput) },  },
     async resolve(parent, args) {
       return await LandlordKind.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2026,7 +2858,7 @@ const mutationFields = {
   },
   addHouse: {
     type: HouseType,
-    args: { input: {type: HouseInput } },
+    args: { input: {type: HouseCreateInput } },
     async resolve(parent, args) {
       return await House.create(args.input);
     }
@@ -2034,7 +2866,7 @@ const mutationFields = {
   updateHouse: {
     type: HouseType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(HouseInput) },  },
+    input: { type: GraphQLNonNull(HouseUpdateInput) },  },
     async resolve(parent, args) {
       return await House.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2049,7 +2881,7 @@ const mutationFields = {
   },
   addHouseKind: {
     type: HouseKindType,
-    args: { input: {type: HouseKindInput } },
+    args: { input: {type: HouseKindCreateInput } },
     async resolve(parent, args) {
       return await HouseKind.create(args.input);
     }
@@ -2057,7 +2889,7 @@ const mutationFields = {
   updateHouseKind: {
     type: HouseKindType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(HouseKindInput) },  },
+    input: { type: GraphQLNonNull(HouseKindUpdateInput) },  },
     async resolve(parent, args) {
       return await HouseKind.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2072,7 +2904,7 @@ const mutationFields = {
   },
   addHousePhoto: {
     type: HousePhotoType,
-    args: { input: {type: HousePhotoInput } },
+    args: { input: {type: HousePhotoCreateInput } },
     async resolve(parent, args) {
       for (const field of ["url"]) {
         if (!args.input[field]) {
@@ -2113,7 +2945,7 @@ const mutationFields = {
   updateHousePhoto: {
     type: HousePhotoType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(HousePhotoInput) },  },
+    input: { type: GraphQLNonNull(HousePhotoUpdateInput) },  },
     async resolve(parent, args) {
       for (const field of ["url"]) {
         if (!args.input[field]) {
@@ -2169,7 +3001,7 @@ const mutationFields = {
   },
   addBedroomPhoto: {
     type: BedroomPhotoType,
-    args: { input: {type: BedroomPhotoInput } },
+    args: { input: {type: BedroomPhotoCreateInput } },
     async resolve(parent, args) {
       for (const field of ["url"]) {
         if (!args.input[field]) {
@@ -2210,7 +3042,7 @@ const mutationFields = {
   updateBedroomPhoto: {
     type: BedroomPhotoType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(BedroomPhotoInput) },  },
+    input: { type: GraphQLNonNull(BedroomPhotoUpdateInput) },  },
     async resolve(parent, args) {
       for (const field of ["url"]) {
         if (!args.input[field]) {
@@ -2266,7 +3098,7 @@ const mutationFields = {
   },
   addFactGroup: {
     type: FactGroupType,
-    args: { input: {type: FactGroupInput } },
+    args: { input: {type: FactGroupCreateInput } },
     async resolve(parent, args) {
       return await FactGroup.create(args.input);
     }
@@ -2274,7 +3106,7 @@ const mutationFields = {
   updateFactGroup: {
     type: FactGroupType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(FactGroupInput) },  },
+    input: { type: GraphQLNonNull(FactGroupUpdateInput) },  },
     async resolve(parent, args) {
       return await FactGroup.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2289,7 +3121,7 @@ const mutationFields = {
   },
   addHouseFact: {
     type: HouseFactType,
-    args: { input: {type: HouseFactInput } },
+    args: { input: {type: HouseFactCreateInput } },
     async resolve(parent, args) {
       return await HouseFact.create(args.input);
     }
@@ -2297,7 +3129,7 @@ const mutationFields = {
   updateHouseFact: {
     type: HouseFactType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(HouseFactInput) },  },
+    input: { type: GraphQLNonNull(HouseFactUpdateInput) },  },
     async resolve(parent, args) {
       return await HouseFact.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2312,7 +3144,7 @@ const mutationFields = {
   },
   addHouseUniversity: {
     type: HouseUniversityType,
-    args: { input: {type: HouseUniversityInput } },
+    args: { input: {type: HouseUniversityCreateInput } },
     async resolve(parent, args) {
       return await HouseUniversity.create(args.input);
     }
@@ -2320,7 +3152,7 @@ const mutationFields = {
   updateHouseUniversity: {
     type: HouseUniversityType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(HouseUniversityInput) },  },
+    input: { type: GraphQLNonNull(HouseUniversityUpdateInput) },  },
     async resolve(parent, args) {
       return await HouseUniversity.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2335,7 +3167,7 @@ const mutationFields = {
   },
   addBedroom: {
     type: BedroomType,
-    args: { input: {type: BedroomInput } },
+    args: { input: {type: BedroomCreateInput } },
     async resolve(parent, args) {
       return await Bedroom.create(args.input);
     }
@@ -2343,7 +3175,7 @@ const mutationFields = {
   updateBedroom: {
     type: BedroomType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(BedroomInput) },  },
+    input: { type: GraphQLNonNull(BedroomUpdateInput) },  },
     async resolve(parent, args) {
       return await Bedroom.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2358,7 +3190,7 @@ const mutationFields = {
   },
   addCategory: {
     type: CategoryType,
-    args: { input: {type: CategoryInput } },
+    args: { input: {type: CategoryCreateInput } },
     async resolve(parent, args) {
       return await Category.create(args.input);
     }
@@ -2366,7 +3198,7 @@ const mutationFields = {
   updateCategory: {
     type: CategoryType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(CategoryInput) },  },
+    input: { type: GraphQLNonNull(CategoryUpdateInput) },  },
     async resolve(parent, args) {
       return await Category.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2381,7 +3213,7 @@ const mutationFields = {
   },
   addElement: {
     type: ElementType,
-    args: { input: {type: ElementInput } },
+    args: { input: {type: ElementCreateInput } },
     async resolve(parent, args) {
       return await Element.create(args.input);
     }
@@ -2389,7 +3221,7 @@ const mutationFields = {
   updateElement: {
     type: ElementType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(ElementInput) },  },
+    input: { type: GraphQLNonNull(ElementUpdateInput) },  },
     async resolve(parent, args) {
       return await Element.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2402,9 +3234,32 @@ const mutationFields = {
       return result ? !!result.deletedCount : null
     }
   },
+  addElementKind: {
+    type: ElementKindType,
+    args: { input: {type: ElementKindCreateInput } },
+    async resolve(parent, args) {
+      return await ElementKind.create(args.input);
+    }
+  },
+  updateElementKind: {
+    type: ElementKindType,
+    args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
+    input: { type: GraphQLNonNull(ElementKindUpdateInput) },  },
+    async resolve(parent, args) {
+      return await ElementKind.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
+    }
+  },
+  deleteElementKind: {
+    type: GraphQLBoolean,
+    args: { _id: { type: GraphQLInt }, },
+    async resolve(parent, args) {
+      const result = await ElementKind.deleteOne({ _id: args._id });
+      return result ? !!result.deletedCount : null
+    }
+  },
   addElementPreference: {
     type: ElementPreferenceType,
-    args: { input: {type: ElementPreferenceInput } },
+    args: { input: {type: ElementPreferenceCreateInput } },
     async resolve(parent, args) {
       return await ElementPreference.create(args.input);
     }
@@ -2412,7 +3267,7 @@ const mutationFields = {
   updateElementPreference: {
     type: ElementPreferenceType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(ElementPreferenceInput) },  },
+    input: { type: GraphQLNonNull(ElementPreferenceUpdateInput) },  },
     async resolve(parent, args) {
       return await ElementPreference.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2427,7 +3282,7 @@ const mutationFields = {
   },
   addAchievement: {
     type: AchievementType,
-    args: { input: {type: AchievementInput } },
+    args: { input: {type: AchievementCreateInput } },
     async resolve(parent, args) {
       return await Achievement.create(args.input);
     }
@@ -2435,7 +3290,7 @@ const mutationFields = {
   updateAchievement: {
     type: AchievementType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(AchievementInput) },  },
+    input: { type: GraphQLNonNull(AchievementUpdateInput) },  },
     async resolve(parent, args) {
       return await Achievement.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2450,7 +3305,7 @@ const mutationFields = {
   },
   addStudentAchievement: {
     type: StudentAchievementType,
-    args: { input: {type: StudentAchievementInput } },
+    args: { input: {type: StudentAchievementCreateInput } },
     async resolve(parent, args) {
       return await StudentAchievement.create(args.input);
     }
@@ -2458,7 +3313,7 @@ const mutationFields = {
   updateStudentAchievement: {
     type: StudentAchievementType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(StudentAchievementInput) },  },
+    input: { type: GraphQLNonNull(StudentAchievementUpdateInput) },  },
     async resolve(parent, args) {
       return await StudentAchievement.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2473,7 +3328,7 @@ const mutationFields = {
   },
   addReview: {
     type: ReviewType,
-    args: { input: {type: ReviewInput } },
+    args: { input: {type: ReviewCreateInput } },
     async resolve(parent, args) {
       return await Review.create(args.input);
     }
@@ -2481,7 +3336,7 @@ const mutationFields = {
   updateReview: {
     type: ReviewType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(ReviewInput) },  },
+    input: { type: GraphQLNonNull(ReviewUpdateInput) },  },
     async resolve(parent, args) {
       return await Review.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2494,9 +3349,32 @@ const mutationFields = {
       return result ? !!result.deletedCount : null
     }
   },
+  addReviewComment: {
+    type: ReviewCommentType,
+    args: { input: {type: ReviewCommentCreateInput } },
+    async resolve(parent, args) {
+      return await ReviewComment.create(args.input);
+    }
+  },
+  updateReviewComment: {
+    type: ReviewCommentType,
+    args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
+    input: { type: GraphQLNonNull(ReviewCommentUpdateInput) },  },
+    async resolve(parent, args) {
+      return await ReviewComment.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
+    }
+  },
+  deleteReviewComment: {
+    type: GraphQLBoolean,
+    args: { _id: { type: GraphQLInt }, },
+    async resolve(parent, args) {
+      const result = await ReviewComment.deleteOne({ _id: args._id });
+      return result ? !!result.deletedCount : null
+    }
+  },
   addReviewHouseElement: {
     type: ReviewHouseElementType,
-    args: { input: {type: ReviewHouseElementInput } },
+    args: { input: {type: ReviewHouseElementCreateInput } },
     async resolve(parent, args) {
       return await ReviewHouseElement.create(args.input);
     }
@@ -2504,7 +3382,7 @@ const mutationFields = {
   updateReviewHouseElement: {
     type: ReviewHouseElementType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(ReviewHouseElementInput) },  },
+    input: { type: GraphQLNonNull(ReviewHouseElementUpdateInput) },  },
     async resolve(parent, args) {
       return await ReviewHouseElement.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2519,7 +3397,7 @@ const mutationFields = {
   },
   addHouseElement: {
     type: HouseElementType,
-    args: { input: {type: HouseElementInput } },
+    args: { input: {type: HouseElementCreateInput } },
     async resolve(parent, args) {
       return await HouseElement.create(args.input);
     }
@@ -2527,7 +3405,7 @@ const mutationFields = {
   updateHouseElement: {
     type: HouseElementType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(HouseElementInput) },  },
+    input: { type: GraphQLNonNull(HouseElementUpdateInput) },  },
     async resolve(parent, args) {
       return await HouseElement.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2542,7 +3420,7 @@ const mutationFields = {
   },
   addNotification: {
     type: NotificationType,
-    args: { input: {type: NotificationInput } },
+    args: { input: {type: NotificationCreateInput } },
     async resolve(parent, args) {
       return await Notification.create(args.input);
     }
@@ -2550,7 +3428,7 @@ const mutationFields = {
   updateNotification: {
     type: NotificationType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(NotificationInput) },  },
+    input: { type: GraphQLNonNull(NotificationUpdateInput) },  },
     async resolve(parent, args) {
       return await Notification.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2565,7 +3443,7 @@ const mutationFields = {
   },
   addBill: {
     type: BillType,
-    args: { input: {type: BillInput } },
+    args: { input: {type: BillCreateInput } },
     async resolve(parent, args) {
       return await Bill.create(args.input);
     }
@@ -2573,7 +3451,7 @@ const mutationFields = {
   updateBill: {
     type: BillType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(BillInput) },  },
+    input: { type: GraphQLNonNull(BillUpdateInput) },  },
     async resolve(parent, args) {
       return await Bill.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2588,7 +3466,7 @@ const mutationFields = {
   },
   addHouseBill: {
     type: HouseBillType,
-    args: { input: {type: HouseBillInput } },
+    args: { input: {type: HouseBillCreateInput } },
     async resolve(parent, args) {
       return await HouseBill.create(args.input);
     }
@@ -2596,7 +3474,7 @@ const mutationFields = {
   updateHouseBill: {
     type: HouseBillType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(HouseBillInput) },  },
+    input: { type: GraphQLNonNull(HouseBillUpdateInput) },  },
     async resolve(parent, args) {
       return await HouseBill.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2611,7 +3489,7 @@ const mutationFields = {
   },
   addFavoriteHouse: {
     type: FavoriteHouseType,
-    args: { input: {type: FavoriteHouseInput } },
+    args: { input: {type: FavoriteHouseCreateInput } },
     async resolve(parent, args) {
       return await FavoriteHouse.create(args.input);
     }
@@ -2619,7 +3497,7 @@ const mutationFields = {
   updateFavoriteHouse: {
     type: FavoriteHouseType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(FavoriteHouseInput) },  },
+    input: { type: GraphQLNonNull(FavoriteHouseUpdateInput) },  },
     async resolve(parent, args) {
       return await FavoriteHouse.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
     }
@@ -2629,6 +3507,29 @@ const mutationFields = {
     args: { _id: { type: GraphQLInt }, },
     async resolve(parent, args) {
       const result = await FavoriteHouse.deleteOne({ _id: args._id });
+      return result ? !!result.deletedCount : null
+    }
+  },
+  addPersonIssue: {
+    type: PersonIssueType,
+    args: { input: {type: PersonIssueCreateInput } },
+    async resolve(parent, args) {
+      return await PersonIssue.create(args.input);
+    }
+  },
+  updatePersonIssue: {
+    type: PersonIssueType,
+    args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
+    input: { type: GraphQLNonNull(PersonIssueUpdateInput) },  },
+    async resolve(parent, args) {
+      return await PersonIssue.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
+    }
+  },
+  deletePersonIssue: {
+    type: GraphQLBoolean,
+    args: { _id: { type: GraphQLInt }, },
+    async resolve(parent, args) {
+      const result = await PersonIssue.deleteOne({ _id: args._id });
       return result ? !!result.deletedCount : null
     }
   },
@@ -2653,16 +3554,19 @@ UniversityType,
   BedroomType,
   CategoryType,
   ElementType,
+  ElementKindType,
   ElementPreferenceType,
   AchievementType,
   StudentAchievementType,
   ReviewType,
+  ReviewCommentType,
   ReviewHouseElementType,
   HouseElementType,
   NotificationType,
   BillType,
   HouseBillType,
-  FavoriteHouse
+  FavoriteHouseType,
+  PersonIssue
 };
 
 const RootQuery = new GraphQLObjectType({
@@ -2695,7 +3599,7 @@ module.exports = { schema };
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Tue Nov 19 2019 14:52:26 GMT+0300 (Москва, стандартное время)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Sat Nov 23 2019 21:04:28 GMT+0300 (Москва, стандартное время)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>

@@ -83,6 +83,30 @@ function App() {
 export default App;
 ```
 
+## JWT
+
+All three login endpoins return `{ user, token }` object.
+Where `token` is a JWT.
+
+Here is example of decripted JWT:
+
+```json
+{
+  aud: '3e5e844c-34f2-4883-83b1-a15d59a2ee2a',
+  exp: 1574535040,
+  iat: 1574531440,
+  iss: 'uniroomy.co.uk',
+  sub: 'df97df61-cb1e-4063-9256-71537e226069',
+  authenticationType: 'PASSWORD',
+  email: 'test33@test.test',
+  email_verified: false,
+  applicationId: '3e5e844c-34f2-4883-83b1-a15d59a2ee2a',
+  roles: [ 'Student' ]
+}
+```
+
+The field `email_verified` indicates is the user verified email or not. It is always true for users, authenticated by Facebook or Google.
+
 ## Registration of a new user
 
 To register new user two methods could be used:
