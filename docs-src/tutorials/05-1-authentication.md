@@ -93,15 +93,16 @@ Here is example of decripted JWT:
 ```json
 {
   aud: '3e5e844c-34f2-4883-83b1-a15d59a2ee2a',
-  exp: 1574535040,
-  iat: 1574531440,
+  exp: 1574537107,
+  iat: 1574533507,
   iss: 'uniroomy.co.uk',
-  sub: 'df97df61-cb1e-4063-9256-71537e226069',
+  sub: '65c5fec6-c97c-4eca-86fd-594c253c1a5c',
   authenticationType: 'PASSWORD',
-  email: 'test33@test.test',
+  email: 'test35@test.test',
   email_verified: false,
   applicationId: '3e5e844c-34f2-4883-83b1-a15d59a2ee2a',
-  roles: [ 'Student' ]
+  roles: [ 'Landlord' ],
+  person_id: 100137
 }
 ```
 
