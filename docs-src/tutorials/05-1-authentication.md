@@ -40,6 +40,7 @@ import GoogleLogin from 'react-google-login';
 const responseFacebook = async (facebookResponse) => {
   console.log(facebookResponse);
   const { accessToken } = facebookResponse;
+  // does not work locally because of SSL certificates tied to uniroomy.co.uk
   const loginResponse = await fetch(`https://uniroomy.co.uk:3003/api/facebook-login/?facebook_access_token=${accessToken}`)
   const loginResult = await loginResponse.json();
   console.log({ loginResult });
@@ -57,7 +58,6 @@ const responseGoogle = async (googleResponse) => {
     console.log({err});
   }
 }
-
 
 function App() {
   return (
@@ -110,33 +110,38 @@ The field `email_verified` indicates is the user verified email or not. It is al
 
 ## Registration of a new user
 
-To register new user two methods could be used:
+To register new user:
 
-1. Call `/api/register` endpoint
-2. Call `/api` endpoint with addStudent/addLandlord GraphQL mutation
-
-Both methods create person + student/landlord tuples and FusionAuth user with the corresponding role.
+1. Call `/api/register` endpoint to create a person with email and password. The user is logged in after this call. The call creates FusionAuth user.
+2. Call `/api` endpoint with addStudent/addLandlord GraphQL mutation. The _id of new student/landlord should be extracted from jwt, returned by previous api call or login call.
 
 Example of `/api/register` endpoint calling
 
 ```
-curl -vS --insecure -X POST -H "Content-Type: application/json" --data '{"email": "test24@test.test", "password": "A989890879", "first_name": "Jonny", "last_name": "Smith",  "role": "Landlord" }'  "https://localhost:3003/api/register"
+curl -vS --insecure -X POST -H "Content-Type: application/json" --data '{"email": "test24@test.test", "password": "A989890879", "first_name": "Jonny", "last_name": "Smith" }'  "https://uniroomy.co.uk/api/register"
 ```
 
-Example of GraphQL mutation
+Example of GraphQL mutation for adding a student after a person has been registered
 
 ```
 mutation {
   addStudent(input: {
+    _id: 100158
     university_id: 3
-    person: {
-      first_name: "John"
-      last_name: "Doe"
-      email: "test19@test.test"
-      password: "A12345678"
-    }
+    uni_email: "jonny.smith@london.ac.uk"
   }) {
     _id
   }
 }
 ```
+
+## Forgotten password
+
+To start reset password workflow the /api/forgot-password should be called.
+Here is an example of /api/forgot password call
+
+```bash
+curl -vS -X POST -H "Content-Type: application/json" --data '{"email": "mail@example.com" }'  "https://uniroomy.co.uk/api/forgot-password"
+```
+
+After this call the user receives a link for the password reset.
