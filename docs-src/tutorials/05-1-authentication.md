@@ -113,17 +113,19 @@ The field `email_verified` indicates is the user verified email or not. It is al
 To register new user:
 
 1. Call `/api/register` endpoint to create a person with email and password. The user is logged in after this call. The call creates FusionAuth user.
-2. Call `/api` endpoint with addStudent/addLandlord GraphQL mutation. The _id of new student/landlord should be extracted from jwt, returned by previous api call or login call.
+2. Add Student/Landlord:
+    * call `/api` endpoint with addStudent/addLandlord GraphQL mutation. The _id of new student/landlord should be extracted from jwt, returned by previous api call or login call.
+    * Or call `/api/add-student`/`/api/add-landlord` endpoint to add a student/landlord with given _id.
 
 Example of `/api/register` endpoint calling
 
-```
+```bash
 curl -vS --insecure -X POST -H "Content-Type: application/json" --data '{"email": "test24@test.test", "password": "A989890879", "first_name": "Jonny", "last_name": "Smith" }'  "https://uniroomy.co.uk/api/register"
 ```
 
 Example of GraphQL mutation for adding a student after a person has been registered
 
-```
+```graphql
 mutation {
   addStudent(input: {
     _id: 100158
@@ -133,6 +135,12 @@ mutation {
     _id
   }
 }
+```
+
+Example of `/api/add-student` endpoint calling
+
+```bash
+curl -vS --insecure -X POST -H "Content-Type: application/json" --data '{ "_id": 100329, "uni_email": "test24@test.ac.uk" }'  "https://uniroomy.co.uk/api/add-student"
 ```
 
 ## Forgotten password

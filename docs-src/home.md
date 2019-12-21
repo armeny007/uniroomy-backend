@@ -13,6 +13,7 @@
 | GET        | /api/google-login     | Login/Register user with Google                            | { google_token_id: string }                 |  {<br/>user: object,<br/> token: string<br/>}      |
 | GET        | /api/logout             | Logout user                                         | { access_token: string }  |  -      |
 | POST       | /api/register           | Register a new user using email + password  | {<br/> email: string,<br/> password: string,<br/> first_name: string,<br/> // [optional]<br/><br/> last_name: string,<br/> // [optional]<br/> } |  {<br/>user: object,<br/> token: string<br/>}      |
+| POST       | /api/add-student           | Adds new student with given _id. This endpoint should be called after /api/register  | {<br/> _id: int, <br/> uni_email: string,<br/> status_id: int<br/> } |  {<br/>success: boolean<br/>}      |
 | POST       | /api/forgot-password           | Start FusionAuth Forgot Password workflow  | {<br/> email: string<br/> } |  {<br/>status<br/>}      |
 | POST       | /api/start-verify-uni-email           | Start uni-email verification workflow | {<br/> email: string<br/> uni_email: string<br/> } |  {<br/>status<br/>}      |
 | GET       | /api/verify-uni-email/:token           | Verifies uni-email for a student. This endpoint is called from the verification email. | token: string |  Successful message or error (html)    |
