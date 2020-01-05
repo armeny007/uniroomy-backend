@@ -146,7 +146,6 @@ function getUrlFileName(url) {
 const {
   University,
   Person,
-  Ticket,
   Role,
   Student,
   Status,
@@ -174,7 +173,8 @@ const {
   Bill,
   HouseBill,
   FavoriteHouse,
-  PersonIssue
+  PersonIssue,
+  PersonIssueKind
 } = require('./mongoose-schema');
 
 const UniversityType = new GraphQLObjectType({
@@ -292,21 +292,6 @@ const PersonType = new GraphQLObjectType({
       },
     },
 
-    tickets: {
-      type: new GraphQLList(TicketType),
-      args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-      async resolve(parent, args, context) {
-        const query = {};
-        if (parent.ticket_id_list) {
-          query._id =  { $in: parent.ticket_id_list };
-        }
-        else {
-          query.person_id = parent._id;
-        }
-        return await Ticket.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
-      },
-    },
-
     notifications: {
       type: new GraphQLList(NotificationType),
       args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
@@ -318,6 +303,7 @@ const PersonType = new GraphQLObjectType({
         else {
           query.person_id = parent._id;
         }
+        query.person_id = context.user ? context.user.person_id : null;
         return await Notification.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
     },
@@ -332,6 +318,21 @@ const PersonType = new GraphQLObjectType({
         }
         else {
           query.person_id = parent._id;
+        }
+        return await PersonIssue.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      },
+    },
+
+    personIssues: {
+      type: new GraphQLList(PersonIssueType),
+      args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        const query = {};
+        if (parent.person_issue_id_list) {
+          query._id =  { $in: parent.person_issue_id_list };
+        }
+        else {
+          query.reporter_person_id = parent._id;
         }
         return await PersonIssue.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
@@ -372,46 +373,6 @@ const PersonUpdateInput = new GraphQLInputObjectType({
     created_at: { type: GraphQLDateTime  },
     updated_at: { type: GraphQLDateTime  },
     profile_photo_url: { type: GraphQLUpload  },
-  }
-});
-
-const TicketType = new GraphQLObjectType({
-  name: 'Ticket',
-  description: 'Represent ticket created by person',
-  fields: () => ({
-    _id: { type: GraphQLInt  },
-    message: { type: GraphQLString  },
-    person_id: { type: GraphQLInt  },
-    created_at: { type: GraphQLDateTime  },
-
-    person: {
-      type: PersonType,
-      args: { _id: { type: GraphQLInt }, },
-      async resolve(parent, args, context) {
-        return await Person.findOne({_id: parent.person_id})
-      },
-    },
-
-  }),
-});
-
-const TicketCreateInput = new GraphQLInputObjectType({
-  name: 'TicketCreateInput',
-  description: '',
-  fields: {
-    message: { type: new GraphQLNonNull(GraphQLString)  },
-    person_id: { type: new GraphQLNonNull(GraphQLInt)  },
-    created_at: { type: GraphQLDateTime  },
-  }
-});
-
-const TicketUpdateInput = new GraphQLInputObjectType({
-  name: 'TicketUpdateInput',
-  description: '',
-  fields: {
-    message: { type: GraphQLString  },
-    person_id: { type: GraphQLInt  },
-    created_at: { type: GraphQLDateTime  },
   }
 });
 
@@ -1370,7 +1331,7 @@ const ElementType = new GraphQLObjectType({
     fact_group_id: { type: GraphQLInt  },
     is_fact: { type: GraphQLInt  },
     preferable: { type: GraphQLBoolean  },
-    type_id: { type: GraphQLInt  },
+    element_kind_id: { type: GraphQLInt  },
     fact_group_sort_order: { type: GraphQLInt  },
     category_sort_order: { type: GraphQLInt  },
 
@@ -1392,7 +1353,7 @@ const ElementType = new GraphQLObjectType({
       type: ElementKindType,
       args: { _id: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
-        return await ElementKind.findOne({id: parent.type_id})
+        return await ElementKind.findOne({_id: parent.element_kind_id})
       },
     },
     reviewHouseElements: {
@@ -1469,7 +1430,7 @@ const ElementCreateInput = new GraphQLInputObjectType({
     fact_group_id: { type: GraphQLInt  },
     is_fact: { type: GraphQLInt  },
     preferable: { type: GraphQLBoolean  },
-    type_id: { type: GraphQLInt  },
+    element_kind_id: { type: GraphQLInt  },
     fact_group_sort_order: { type: GraphQLInt  },
     category_sort_order: { type: GraphQLInt  },
   }
@@ -1484,7 +1445,7 @@ const ElementUpdateInput = new GraphQLInputObjectType({
     fact_group_id: { type: GraphQLInt  },
     is_fact: { type: GraphQLInt  },
     preferable: { type: GraphQLBoolean  },
-    type_id: { type: GraphQLInt  },
+    element_kind_id: { type: GraphQLInt  },
     fact_group_sort_order: { type: GraphQLInt  },
     category_sort_order: { type: GraphQLInt  },
   }
@@ -1494,7 +1455,7 @@ const ElementKindType = new GraphQLObjectType({
   name: 'ElementKind',
   description: 'Represents element type. (used word "kind" instead of "type" because of entity type name collisions)',
   fields: () => ({
-    id: { type: GraphQLInt  },
+    _id: { type: GraphQLInt  },
     name: { type: GraphQLString  },
     from: { type: GraphQLInt  },
     to: { type: GraphQLInt  },
@@ -1509,7 +1470,7 @@ const ElementKindType = new GraphQLObjectType({
           query._id =  { $in: parent.element_id_list };
         }
         else {
-          query.type_id = parent.id;
+          query.element_kind_id = parent._id;
         }
         return await Element.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
       },
@@ -1549,7 +1510,7 @@ const ElementPreferenceType = new GraphQLObjectType({
     student_id: { type: GraphQLInt  },
     element_id: { type: GraphQLInt  },
     element_weight: { type: GraphQLFloat  },
-    value: { type: GraphQLInt  },
+    value: { type: GraphQLInt , description: 'Value of the preference. For example: preffered max commute time.',  },
 
     student: {
       type: StudentType,
@@ -1576,7 +1537,7 @@ const ElementPreferenceCreateInput = new GraphQLInputObjectType({
     student_id: { type: new GraphQLNonNull(GraphQLInt)  },
     element_id: { type: new GraphQLNonNull(GraphQLInt)  },
     element_weight: { type: GraphQLFloat  },
-    value: { type: GraphQLInt  },
+    value: { type: GraphQLInt , description: 'Value of the preference. For example: preffered max commute time.',  },
   }
 });
 
@@ -1587,7 +1548,7 @@ const ElementPreferenceUpdateInput = new GraphQLInputObjectType({
     student_id: { type: GraphQLInt  },
     element_id: { type: GraphQLInt  },
     element_weight: { type: GraphQLFloat  },
-    value: { type: GraphQLInt  },
+    value: { type: GraphQLInt , description: 'Value of the preference. For example: preffered max commute time.',  },
   }
 });
 
@@ -1737,8 +1698,8 @@ const ReviewCreateInput = new GraphQLInputObjectType({
   fields: {
     student_id: { type: new GraphQLNonNull(GraphQLInt)  },
     house_id: { type: new GraphQLNonNull(GraphQLInt)  },
-    description: { type: new GraphQLNonNull(GraphQLString)  },
-    house_rating: { type: new GraphQLNonNull(GraphQLInt)  },
+    description: { type: GraphQLString  },
+    house_rating: { type: GraphQLInt  },
     created_at: { type: GraphQLDate  },
   }
 });
@@ -1808,7 +1769,6 @@ const ReviewHouseElementType = new GraphQLObjectType({
     review_id: { type: GraphQLInt  },
     element_id: { type: GraphQLInt  },
     element_rating: { type: GraphQLInt  },
-    reviewer_element_weight: { type: GraphQLInt  },
 
     review: {
       type: ReviewType,
@@ -1835,7 +1795,6 @@ const ReviewHouseElementCreateInput = new GraphQLInputObjectType({
     review_id: { type: new GraphQLNonNull(GraphQLInt)  },
     element_id: { type: new GraphQLNonNull(GraphQLInt)  },
     element_rating: { type: new GraphQLNonNull(GraphQLInt)  },
-    reviewer_element_weight: { type: GraphQLInt  },
   }
 });
 
@@ -1846,7 +1805,6 @@ const ReviewHouseElementUpdateInput = new GraphQLInputObjectType({
     review_id: { type: GraphQLInt  },
     element_id: { type: GraphQLInt  },
     element_rating: { type: GraphQLInt  },
-    reviewer_element_weight: { type: GraphQLInt  },
   }
 });
 
@@ -2082,8 +2040,10 @@ const PersonIssueType = new GraphQLObjectType({
   fields: () => ({
     _id: { type: GraphQLInt  },
     person_id: { type: GraphQLInt  },
+    person_issue_kind_id: { type: GraphQLInt  },
     title: { type: GraphQLString  },
     message: { type: GraphQLString  },
+    reporter_person_id: { type: GraphQLInt  },
     created_at: { type: GraphQLDateTime  },
 
     person: {
@@ -2091,6 +2051,20 @@ const PersonIssueType = new GraphQLObjectType({
       args: { _id: { type: GraphQLInt }, },
       async resolve(parent, args, context) {
         return await Person.findOne({_id: parent.person_id})
+      },
+    },
+    person_issue_kind: {
+      type: PersonIssueKindType,
+      args: { _id: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        return await PersonIssueKind.findOne({_id: parent.person_issue_kind_id})
+      },
+    },
+    person: {
+      type: PersonType,
+      args: { _id: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        return await Person.findOne({_id: parent.reporter_person_id})
       },
     },
 
@@ -2102,8 +2076,10 @@ const PersonIssueCreateInput = new GraphQLInputObjectType({
   description: '',
   fields: {
     person_id: { type: new GraphQLNonNull(GraphQLInt)  },
+    person_issue_kind_id: { type: GraphQLInt  },
     title: { type: GraphQLString  },
     message: { type: GraphQLString  },
+    reporter_person_id: { type: GraphQLInt  },
     created_at: { type: GraphQLDateTime  },
   }
 });
@@ -2113,9 +2089,53 @@ const PersonIssueUpdateInput = new GraphQLInputObjectType({
   description: '',
   fields: {
     person_id: { type: GraphQLInt  },
+    person_issue_kind_id: { type: GraphQLInt  },
     title: { type: GraphQLString  },
     message: { type: GraphQLString  },
+    reporter_person_id: { type: GraphQLInt  },
     created_at: { type: GraphQLDateTime  },
+  }
+});
+
+const PersonIssueKindType = new GraphQLObjectType({
+  name: 'PersonIssueKind',
+  description: '',
+  fields: () => ({
+    _id: { type: GraphQLInt  },
+    name: { type: GraphQLString  },
+
+    personIssues: {
+      type: new GraphQLList(PersonIssueType),
+      args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
+      async resolve(parent, args, context) {
+        const query = {};
+        if (parent.person_issue_id_list) {
+          query._id =  { $in: parent.person_issue_id_list };
+        }
+        else {
+          query.person_issue_kind_id = parent._id;
+        }
+        return await PersonIssue.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+      },
+    },
+
+
+  }),
+});
+
+const PersonIssueKindCreateInput = new GraphQLInputObjectType({
+  name: 'PersonIssueKindCreateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
+  }
+});
+
+const PersonIssueKindUpdateInput = new GraphQLInputObjectType({
+  name: 'PersonIssueKindUpdateInput',
+  description: '',
+  fields: {
+    name: { type: GraphQLString  },
   }
 });
 
@@ -2148,21 +2168,6 @@ const queryFields = {
     async resolve(parent, args, context) {
       const query = {};
       return await Person.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
-    },
-  },
-  ticket: {
-    type: TicketType,
-    args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args, context) {
-      return await Ticket.findOne({_id: args._id})
-    },
-  },
-  tickets: {
-    type: new GraphQLList(TicketType),
-    args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
-    async resolve(parent, args, context) {
-      const query = {};
-      return await Ticket.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
   role: {
@@ -2524,6 +2529,7 @@ const queryFields = {
     args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
     async resolve(parent, args, context) {
       const query = {};
+      query.person_id = context.user ? context.user.person_id : null;
       return await Notification.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
@@ -2585,6 +2591,21 @@ const queryFields = {
     async resolve(parent, args, context) {
       const query = {};
       return await PersonIssue.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
+    },
+  },
+  person_issue_kind: {
+    type: PersonIssueKindType,
+    args: { _id: { type: GraphQLInt }, },
+    async resolve(parent, args, context) {
+      return await PersonIssueKind.findOne({_id: args._id})
+    },
+  },
+  person_issue_kinds: {
+    type: new GraphQLList(PersonIssueKindType),
+    args: { skip: { type: GraphQLInt }, limit: { type: GraphQLInt }, },
+    async resolve(parent, args, context) {
+      const query = {};
+      return await PersonIssueKind.find(query).skip(args.skip || 0).limit(args.limit || maxReturnedRows);
     },
   },
 };
@@ -2707,29 +2728,6 @@ const mutationFields = {
         }
       }
       const result = await Person.deleteOne({ _id: args._id });
-      return result ? !!result.deletedCount : null
-    }
-  },
-  addTicket: {
-    type: TicketType,
-    args: { input: {type: TicketCreateInput } },
-    async resolve(parent, args) {
-      return await Ticket.create(args.input);
-    }
-  },
-  updateTicket: {
-    type: TicketType,
-    args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
-    input: { type: GraphQLNonNull(TicketUpdateInput) },  },
-    async resolve(parent, args) {
-      return await Ticket.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
-    }
-  },
-  deleteTicket: {
-    type: GraphQLBoolean,
-    args: { _id: { type: GraphQLInt }, },
-    async resolve(parent, args) {
-      const result = await Ticket.deleteOne({ _id: args._id });
       return result ? !!result.deletedCount : null
     }
   },
@@ -3379,6 +3377,13 @@ const mutationFields = {
       return await ReviewHouseElement.create(args.input);
     }
   },
+  addReviewHouseElements: {
+    type: new GraphQLList(ReviewHouseElementType),
+    args: { input: {type: new GraphQLList(ReviewHouseElementCreateInput) } },
+    async resolve(parent, args) {
+      return await ReviewHouseElement.create(args.input);
+    }
+  },
   updateReviewHouseElement: {
     type: ReviewHouseElementType,
     args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
@@ -3533,12 +3538,34 @@ const mutationFields = {
       return result ? !!result.deletedCount : null
     }
   },
+  addPersonIssueKind: {
+    type: PersonIssueKindType,
+    args: { input: {type: PersonIssueKindCreateInput } },
+    async resolve(parent, args) {
+      return await PersonIssueKind.create(args.input);
+    }
+  },
+  updatePersonIssueKind: {
+    type: PersonIssueKindType,
+    args: { _id: { type: GraphQLNonNull(GraphQLInt) }, 
+    input: { type: GraphQLNonNull(PersonIssueKindUpdateInput) },  },
+    async resolve(parent, args) {
+      return await PersonIssueKind.findOneAndUpdate({ _id: args._id }, args.input, { new: true });
+    }
+  },
+  deletePersonIssueKind: {
+    type: GraphQLBoolean,
+    args: { _id: { type: GraphQLInt }, },
+    async resolve(parent, args) {
+      const result = await PersonIssueKind.deleteOne({ _id: args._id });
+      return result ? !!result.deletedCount : null
+    }
+  },
 };
 
 const uniRoomyGraphQLTypes = {
 UniversityType,
   PersonType,
-  TicketType,
   RoleType,
   StudentType,
   StatusType,
@@ -3566,7 +3593,8 @@ UniversityType,
   BillType,
   HouseBillType,
   FavoriteHouseType,
-  PersonIssue
+  PersonIssueType,
+  PersonIssueKind
 };
 
 const RootQuery = new GraphQLObjectType({
@@ -3599,7 +3627,7 @@ module.exports = { schema };
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Sat Dec 21 2019 21:27:32 GMT+0300 (Moscow Standard Time)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Mon Jan 06 2020 02:24:00 GMT+0300 (Moscow Standard Time)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
